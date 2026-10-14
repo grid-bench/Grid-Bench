@@ -1,91 +1,55 @@
-# Reproducing the release
+# Reproducing study summaries
 
-The code candidate and data candidate form one release. Keep their manifests
-together so a result can be traced to the same instances, prompts, measurements, and
-analysis snapshot.
-
-## Offline verification and result reconstruction
-
-From the code directory, with the companion Hugging Face directory available:
+The offline reproduction helper verifies the companion data package, replays
+its reference states, and reconstructs study summaries from recorded
+measurements. It needs no model credentials or private research files.
 
 ```sh
 python -m pip install -e '.[plots]'
 python scripts/reproduce_release.py \
-  --data /absolute/path/to/huggingface \
+  --data /path/to/Grid-Bench-data \
   --out /tmp/grid-bench-reproduced
 ```
 
-The helper reads the frozen inputs and recorded measurements, checks reference
-execution, and writes supported summaries and a history-length figure to the
-output directory. Collected model answers are not distributed; their original
-scores are not independently recomputed by this public workflow. It does not generate new model results.
-Its output report records the exact checks completed and files produced.
+Add `--no-plot` to run without Matplotlib. The base package is sufficient for
+reference verification and table reconstruction.
 
-Outputs include `validation.json`, six CSV tables under `tables/` (`overview`,
-`length`, `task_length`, `dimension_length`, `workload`, and `resources`), and
-`figures/history-length.png` plus its PDF version. Descriptive statistics are
-recomputed; trajectory-bootstrap intervals are read from the frozen analysis.
+## Checks and outputs
 
-The released study has 1,488 reference states and 8,928 model-instance outcomes.
-The main history-length comparison uses 1,152 instances per model. The separate
-workload view reuses 192 of these and includes 336 additional instances; it
-contains 528 unique instances, not an extra 528 questions in the benchmark.
+The helper validates file inventories and hashes, checks exact prompt rendering,
+executes all 1,488 reference instances, and joins all 8,928 measurement records
+by their identities. It writes:
 
-## Supported reproduction workflows
+| Output | Contents |
+| --- | --- |
+| `validation.json` | Checks completed and any discrepancies |
+| `tables/overview.csv` | Overall measurements by model |
+| `tables/length.csv` | Results by history length |
+| `tables/task_length.csv` | Results by operation family and history length |
+| `tables/dimension_length.csv` | Results by dimension and history length |
+| `tables/workload.csv` | Within-family workload comparisons |
+| `tables/resources.csv` | Recorded resource and termination summaries |
+| `figures/history-length.png` and `.pdf` | Main-view accuracy curves |
 
-| Operation | Inputs | Result |
-| --- | --- | --- |
-| Execute references and score a new model | Instances, simulator, scorer, and new answers | Independently computed target states and scores |
-| Check the reference instances | Instances, prompts, and simulator reference states | Prompt and reference-execution checks |
-| Rebuild the selected result summaries and plots | Recorded scores and frozen analysis/diagnostic evidence | The supported aggregate tables and assets |
+The six tables contain 846 rows in total. Descriptive statistics are recomputed
+from individual measurement records. Confidence intervals are retained from
+the released trajectory bootstrap; this command does not rerun that bootstrap.
+The report records which checks and calculations were performed.
 
-Analysis and diagnostic exports preserve reported statistics while excluding
-answer-bearing failure cases. Reusing those files does not rerun their original bootstrap or
-reconstruct provider requests. The portable helper states which values it
-recomputes and which intervals or diagnostics it reads from frozen evidence.
-The original campaign-ledger verification tools require the original collection
-archive and are separate from this portable workflow.
+## What is reproducible from each input
 
-## Sample units and versions
+| Input | Check or computation |
+| --- | --- |
+| Instances and simulator | Complete reference states and per-event workloads |
+| Instances and renderer | Exact model-visible prompts |
+| Your own delivered answers | New per-instance scores through the [evaluator](evaluation.md) |
+| Released measurement records | Descriptive statistics, supported tables, and accuracy curves |
 
-Each trajectory contributes six prefix instances at T=0,1,8,16,32,64. Prefixes
-share an underlying history. The released study's intervals resample complete
-trajectories within the reported strata, with 2,000 replicates. Rows and prefixes
-should not be substituted for independent trajectories in those intervals.
+Collected model answers are not distributed, so the helper cannot independently
+rescore those answers. The retained measurements support summary reconstruction;
+new answers can be evaluated using the same scoring implementation.
 
-The public release identity is separate from package version 0.5.0, native
-schema `spatial-worlds/0.2`, and formal prompt `spatial-worlds-prompt/0.4`.
-Historical metadata retains its original values. Manifests distinguish source
-hashes from the bytes of sanitized public exports.
-
-## Native CLI inputs
-
-```sh
-python scripts/reproduce_release.py \
-  --data /absolute/path/to/huggingface \
-  --out /tmp/grid-bench-reproduced \
-  --export-cli /tmp/grid-bench-cli
-```
-
-Use the guide emitted in that directory for the corresponding native
-`instances.jsonl` and `gold.jsonl` files. This conversion retains source IDs and
-groups so that identical-looking IDs from different source datasets cannot be
-silently joined.
-
-The native files are grouped under `main/` and `rq2/`. The latter contains the
-additional workload instances; the full workload view also uses selected main
-instances identified by `in_workload` in the release rows.
-
-## Validation
-
-```sh
-python -m pip install -e '.[dev,eval,plots]'
-pytest -m 'not frozen_data'
-ruff check src tests
-pyright
-```
-
-Portable tests use synthetic fixtures and the included examples. Tests marked
-`frozen_data` inspect the original research archive and are excluded by the
-command above. The candidate validation report records the tests actually run;
-historical workspace test counts are not substitutes for a fresh candidate run.
+Each trajectory contributes six related prefix instances. The study's intervals
+use 2,000 trajectory-bootstrap replicates within the reported strata. The
+[dataset guide](data.md) documents the main and workload views, which share
+some instances.

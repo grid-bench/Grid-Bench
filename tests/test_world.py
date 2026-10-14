@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from spatial_worlds.schema import WorldSpec
-from spatial_worlds.world import WorldState
+from grid_bench.schema import WorldSpec
+from grid_bench.world import WorldState
 
 
 def test_world_state_is_persistent_and_uses_zero_as_default() -> None:

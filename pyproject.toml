@@ -3,8 +3,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "spatial-worlds"
-version = "0.5.0"
+name = "grid-bench"
+version = "0.6.0"
 description = "Grid-Bench: evaluating spatial state prediction under prescribed operations"
 readme = "README.md"
 license = {text = "MIT"}
@@ -17,17 +17,12 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.9",
 ]
-eval = [
-  "anthropic>=1.0",
-  "boto3>=1.40",
-  "openai>=1.50",
-]
 plots = [
   "matplotlib>=3.8",
 ]
 
 [project.scripts]
-spatial-worlds = "spatial_worlds.cli:main"
+grid-bench = "grid_bench.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -36,9 +31,6 @@ where = ["src"]
 addopts = "-q"
 pythonpath = ["src"]
 testpaths = ["tests"]
-markers = [
-  "frozen_data: requires the archived formal binding and generated study datasets",
-]
 
 [tool.ruff]
 line-length = 100
@@ -51,7 +43,7 @@ select = ["B", "E", "F", "I", "UP"]
 "tests/*" = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["spatial_worlds"]
+known-first-party = ["grid_bench"]
 known-local-folder = ["oracles"]
 
 [tool.pyright]

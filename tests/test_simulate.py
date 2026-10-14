@@ -6,9 +6,9 @@ from random import Random
 
 import pytest
 
-from spatial_worlds.registry import family_ids, get_family
-from spatial_worlds.schema import Event, GoldRecord, Instance, SchemaError, WorldSpec
-from spatial_worlds.simulate import gold_record, simulate
+from grid_bench.registry import family_ids, get_family
+from grid_bench.schema import Event, GoldRecord, Instance, SchemaError, WorldSpec
+from grid_bench.simulate import gold_record, simulate
 
 from oracles import FAMILY_VALUES, random_event, random_state
 

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from spatial_worlds.family import Family
-from spatial_worlds.registry import family_ids, get_family, list_families, validate_instance
-from spatial_worlds.schema import Event, Instance, WorldSpec
-from spatial_worlds.world import WorldState
+from grid_bench.family import Family
+from grid_bench.registry import family_ids, get_family, list_families, validate_instance
+from grid_bench.schema import Event, Instance, WorldSpec
+from grid_bench.world import WorldState
 
 EXPECTED_FAMILY_IDS = {
     "metric_paint",

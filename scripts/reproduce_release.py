@@ -8,26 +8,16 @@ import hashlib
 import json
 import math
 import sys
-from collections import defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.analyze_completed import group_stats
-from spatial_worlds.eval.aggregate import score_formal_record
-from spatial_worlds.eval.expanded_analysis_registry import COLORS, LENGTHS, MARKERS, MODELS
-from spatial_worlds.prompt import COMPLETION_PROMPT_VERSION, render_prompt
-from spatial_worlds.schema import GoldRecord, Instance, parse_json_document
-from spatial_worlds.simulate import simulate
+from grid_bench.analysis import COLORS, LENGTHS, MARKERS, MODELS, group_stats
+from grid_bench.prompt import PROMPT_VERSION, render_prompt
+from grid_bench.schema import GoldRecord, Instance, parse_json_document
+from grid_bench.simulate import simulate
 
-SCORE_FIELDS = (
-    "em", "strict_em", "valid_json", "valid_state", "canonical_format",
-    "wrong_cells", "cell_accuracy", "changed_cell_accuracy", "unchanged_cell_accuracy",
-    "answer_status", "extraction_applied", "extraction_method", "analysis_eligible",
-    "total_cells", "changed_cells", "copy_baseline_em", "copy_baseline_cell_accuracy",
-    "zero_baseline_em", "zero_baseline_cell_accuracy", "score_error",
-)
 TABLE_KEYS = {
     "overview": ("model", "view"), "resources": ("model", "view"),
     "length": ("model", "T"), "task_length": ("model", "family", "T"),
@@ -85,74 +75,38 @@ def reference_index(benchmark: list[dict[str, Any]], *, check_references: bool =
         identity = item["public_id"]
         if identity in index:
             raise ValueError(f"Duplicate benchmark ID: {identity}")
+        for text_field, hash_field in (("instance_json", "instance_sha256"),
+                                      ("reference_json", "gold_sha256")):
+            if digest(item[text_field].encode()) != item[hash_field]:
+                raise ValueError(f"Benchmark record hash mismatch: {identity} {text_field}")
         instance = Instance.from_dict(parse_json_document(item["instance_json"]))
         gold = GoldRecord.from_dict(parse_json_document(item["reference_json"]))
-        if instance.id != item["instance_id"] or gold.instance_id != instance.id:
+        if (instance.id != item["instance_id"] or gold.instance_id != instance.id
+                or gold.family != instance.family or gold.world != instance.world):
             raise ValueError(f"Instance/reference identity mismatch: {identity}")
-        prompt = render_prompt(instance, prompt_version=COMPLETION_PROMPT_VERSION)
-        if item["prompt_version"] != COMPLETION_PROMPT_VERSION:
+        if identity != f"{item['source_dataset']}:{instance.id}":
+            raise ValueError(f"Public instance identity mismatch: {identity}")
+        expected = {
+            "family": instance.family, "dimension": instance.dimension,
+            "shape": list(instance.world.shape), "history_length": instance.horizon,
+            "workload": instance.metadata.get("nominal_scan_workload", 0),
+            "public_trajectory_id": f"{item['source_dataset']}:{item['rollout_id']}",
+        }
+        for field, value in expected.items():
+            if item[field] != value:
+                raise ValueError(f"Benchmark metadata mismatch: {identity} {field}")
+        prompt = render_prompt(instance, prompt_version=PROMPT_VERSION)
+        if item["prompt_version"] != PROMPT_VERSION:
             raise ValueError(f"Unexpected formal prompt version: {identity}")
         if digest(prompt.encode()) != item["prompt_sha256"] or prompt != item["prompt"]:
             raise ValueError(f"Formal prompt mismatch: {identity}")
-        if check_references and simulate(instance).final_state != gold.final_state:
-            raise ValueError(f"Reference execution mismatch: {identity}")
+        if check_references:
+            replay = simulate(instance)
+            if replay.final_state != gold.final_state or replay.workloads != gold.workloads:
+                raise ValueError(f"Reference execution mismatch: {identity}")
         index[identity] = item, instance, gold
 
     return index
-
-
-def rescore(
-    benchmark: list[dict[str, Any]], outcomes: list[dict[str, Any]],
-    *, check_references: bool = True,
-) -> list[dict[str, Any]]:
-    """Check supplied private answers with the official extractor/scorer."""
-    index = reference_index(benchmark, check_references=check_references)
-
-    seen: set[tuple[str, str]] = set()
-    result: list[dict[str, Any]] = []
-    for outcome in outcomes:
-        key = outcome["model_id"], outcome["public_id"]
-        if key in seen:
-            raise ValueError(f"Duplicate model-instance outcome: {key}")
-        seen.add(key)
-        if key[1] not in index:
-            raise ValueError(f"Unknown outcome instance: {key}")
-        item, instance, gold = index[key[1]]
-        raw = outcome["delivered_text"]
-        if digest(raw.encode()) != outcome["delivered_text_sha256"]:
-            raise ValueError(f"Delivered-answer hash mismatch: {key}")
-        record = {
-            "raw_text": raw,
-            "model": key[0],
-            "dataset": item["source_dataset"],
-            "scoring_version": outcome["scoring_version"],
-            "evaluation_protocol": outcome["evaluation_protocol"],
-            "answer_eligible": outcome["answer_eligible"],
-            "collection_finalized": outcome["collection_finalized"],
-            "protocol_violation": outcome["protocol_violation"],
-            "refusal": outcome["refusal"],
-            "termination": outcome["termination"],
-            "finish_reason": outcome["finish_reason"],
-            "usage": parse_json_document(outcome["usage_json"]),
-        }
-        scored = score_formal_record(record, instance, gold)
-        for field in SCORE_FIELDS:
-            if field not in outcome or not same_value(scored[field], outcome[field]):
-                raise ValueError(f"Re-score mismatch: {key} {field}")
-        scored.update(
-            public_id=key[1], in_main=item["in_main"], in_workload=item["in_workload"],
-            visible_text_empty=not raw.strip(), model_name=outcome["model_name"],
-        )
-        if scored["visible_text_empty"] != outcome["visible_text_empty"]:
-            raise ValueError(f"Answer-content flag mismatch: {key}")
-        result.append(scored)
-    if result:
-        models = {row["model"] for row in result}
-        if seen != {(model, identity) for model in models for identity in index}:
-            raise ValueError("Incomplete shared model-instance panel")
-    elif benchmark:
-        raise ValueError("Missing outcome panel")
-    return result
 
 
 def result_rows(benchmark: list[dict[str, Any]], results: list[dict[str, Any]],
@@ -162,17 +116,24 @@ def result_rows(benchmark: list[dict[str, Any]], results: list[dict[str, Any]],
     seen = set()
     rows = []
     for measured in results:
-        if {"delivered_text", "raw_text", "prediction"}.intersection(measured):
+        if {"delivered_text", "raw_text", "prediction", "predicted_state", "extracted_text",
+            "delivered_text_sha256", "score_error", "protocol_violation",
+            "error_coordinates", "answer_sha256"}.intersection(measured):
             raise ValueError("Model answers are outside the public result schema")
         key = measured["model_id"], measured["public_id"]
         if key in seen or key[1] not in index:
             raise ValueError("Duplicate result or unknown instance")
         seen.add(key)
-        item, instance, _ = index[key[1]]
-        if measured["em"] and (not measured["valid_state"] or measured["wrong_cells"] != 0):
+        item, instance, gold = index[key[1]]
+        for field in ("instance_id", "source_dataset", "public_trajectory_id", "rollout_id",
+                      "cohort", "history_length", "prompt_sha256", "prompt_version"):
+            if measured[field] != item[field]:
+                raise ValueError(f"Result identity mismatch: {key} {field}")
+        if measured["em"] != (measured["valid_state"] and measured["wrong_cells"] == 0):
             raise ValueError("Inconsistent exact-match measurement")
         if measured["strict_em"] and not measured["em"]:
             raise ValueError("Inconsistent strict exact-match measurement")
+        validate_measurements(measured, instance, gold)
         rows.append({
             **measured, "model": key[0], "dataset": item["source_dataset"],
             "family": instance.family, "dimension": instance.dimension, "T": instance.horizon,
@@ -184,6 +145,37 @@ def result_rows(benchmark: list[dict[str, Any]], results: list[dict[str, Any]],
     if (not rows and benchmark) or seen != {(m, identity) for m in models for identity in index}:
         raise ValueError("Incomplete shared model-instance result panel")
     return rows
+
+
+def validate_measurements(measured: dict, instance: Instance, gold: GoldRecord) -> None:
+    """Check observable consistency without reconstructing unpublished answers."""
+    total = instance.world.volume
+    initial, final = instance.initial.as_dict(), gold.final_state.as_dict()
+    changed = sum(initial.get(p, 0) != final.get(p, 0) for p in initial.keys() | final.keys())
+    for field, expected in {
+        "total_cells": total, "changed_cells": changed,
+        "copy_baseline_em": changed == 0,
+        "copy_baseline_cell_accuracy": (total - changed) / total,
+        "zero_baseline_em": not final,
+        "zero_baseline_cell_accuracy": (total - len(final)) / total,
+    }.items():
+        if not same_value(measured[field], expected):
+            raise ValueError(f"Inconsistent reference measurement: {field}")
+    valid, wrong = measured["valid_state"], measured["wrong_cells"]
+    if valid:
+        if (type(wrong) is not int or not 0 <= wrong <= total
+                or not same_value(measured["cell_accuracy"], (total - wrong) / total)):
+            raise ValueError("Inconsistent cell measurement")
+    elif wrong is not None or measured["cell_accuracy"] != 0.0:
+        raise ValueError("Inconsistent invalid-state measurement")
+    expected_status = "valid" if valid else "empty" if measured["visible_text_empty"] else None
+    if ((expected_status is not None and measured["answer_status"] != expected_status)
+            or (expected_status is None and measured["answer_status"] not in {"invalid", "refusal"})
+            or (valid and measured["visible_text_empty"])):
+        raise ValueError("Inconsistent answer-status measurement")
+    usage = parse_json_document(measured["usage_json"])
+    if type(usage.get("output_tokens")) is not int or usage["output_tokens"] < 0:
+        raise ValueError("Invalid output-token measurement")
 
 
 def validate_table_coverage(rows: list[dict], tables: dict[str, list[dict]]) -> None:
@@ -204,7 +196,7 @@ def validate_table_coverage(rows: list[dict], tables: dict[str, list[dict]]) -> 
                 tuple(row[field] for field in fields) for row in rows if row[membership]
             }
         if observed != expected:
-            raise ValueError(f"Frozen condition coverage differs from outcomes: {name}")
+            raise ValueError(f"Frozen condition coverage differs from measurements: {name}")
 
 
 def reproduce_tables(rows: list[dict], frozen: dict) -> dict[str, list[dict]]:
@@ -269,47 +261,15 @@ def draw_length_plot(rows: list[dict], names: dict[str, str], destination: Path)
     plt.close(fig)
 
 
-def export_cli(benchmark: list[dict], destination: Path) -> None:
-    """Write native instance/gold records, preserving source-dataset boundaries."""
-    groups: dict[str, list[dict]] = defaultdict(list)
-    for item in benchmark:
-        name = item["source_dataset"]
-        if name not in {"main", "rq2"}:
-            raise ValueError(f"Unknown source dataset: {name}")
-        groups[name].append(item)
-    for name, items in groups.items():
-        folder = destination / name
-        folder.mkdir(parents=True, exist_ok=True)
-        fields = (("instance_json", "instances.jsonl"), ("reference_json", "gold.jsonl"))
-        for field, filename in fields:
-            (folder / filename).write_text("".join(item[field] + "\n" for item in items))
-    (destination / "README.md").write_text(
-        "# Native CLI records\n\n"
-        "These files contain only the formal selected instances. Use the explicit\n"
-        "`--instances` and `--gold` arguments for each source dataset separately:\n\n"
-        "```sh\nspatial-worlds run --instances main/instances.jsonl "
-        "--gold main/gold.jsonl --provider oracle --out main-predictions.jsonl\n"
-        "spatial-worlds evaluate --instances main/instances.jsonl --gold main/gold.jsonl "
-        "--predictions main-predictions.jsonl --out main-results\n```\n\n"
-        "Repeat with `rq2` for the additional workload conditions. The workload\n"
-        "analysis also reuses main instances; membership is retained in the Hub table.\n"
-    )
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", required=True, type=Path, help="Local dataset candidate root")
     parser.add_argument("--out", required=True, type=Path)
-    parser.add_argument("--export-cli", type=Path, help="Also export native CLI records")
     parser.add_argument("--no-plot", action="store_true", help="Run without matplotlib")
     args = parser.parse_args()
     data, out = args.data.resolve(), args.out.resolve()
     if out == data or data in out.parents or out in data.parents:
         parser.error("--out must be separate from the input release")
-    if args.export_cli:
-        cli = args.export_cli.resolve()
-        if cli == data or data in cli.parents or cli in data.parents:
-            parser.error("--export-cli must be separate from the input release")
     verify_manifest(data)
     benchmark = read_jsonl(data / "data/benchmark.jsonl")
     results = read_jsonl(data / "data/results.jsonl")
@@ -324,8 +284,6 @@ def main() -> None:
     if not args.no_plot:
         names = {row["model_id"]: row["model_name"] for row in results}
         draw_length_plot(tables["length"], names, out / "figures")
-    if args.export_cli:
-        export_cli(benchmark, args.export_cli.resolve())
     report = {
         "format": "grid-bench-release-reproduction/2",
         "input_manifest_sha256": digest((data / "manifest.json").read_bytes()),

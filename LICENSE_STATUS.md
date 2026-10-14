@@ -3,8 +3,7 @@
 Copyright (c) 2026 Grid-Bench contributors.
 
 The original source code and its usage documentation are licensed under the
-[MIT License](LICENSE). Original synthetic examples in `examples/*.json` and
-`paper/*examples.json` are licensed under [CC BY 4.0](LICENSE-DATA), as are the
+[MIT License](LICENSE). Original synthetic examples in `examples/*.json` are licensed under [CC BY 4.0](LICENSE-DATA), as are the
 original benchmark instances, prompts, simulator reference answers, and research
 data in the companion dataset. Attribute those data to Grid-Bench contributors
 and link the dataset and license; indicate modifications.

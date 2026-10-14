@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from spatial_worlds.prompt import COMPLETION_PROMPT_VERSION, render_prompt
-from spatial_worlds.schema import Instance
-from spatial_worlds.scoring import score_prediction
-from spatial_worlds.simulate import simulate
+from grid_bench.prompt import PROMPT_VERSION, render_prompt
+from grid_bench.schema import Instance
+from grid_bench.scoring import score_prediction
+from grid_bench.simulate import simulate
 
 
 def main() -> None:
@@ -17,14 +17,13 @@ def main() -> None:
     gold = simulate(instance).gold()
     prediction = json.dumps(gold.final_state.to_dict())
     copied = json.dumps(instance.initial.to_dict())
-    prompt = render_prompt(instance, prompt_version=COMPLETION_PROMPT_VERSION)
-    assert COMPLETION_PROMPT_VERSION == "spatial-worlds-prompt/0.4"
+    prompt = render_prompt(instance, prompt_version=PROMPT_VERSION)
     assert score_prediction(prediction, gold).exact_match
     print(json.dumps({
         "instance_id": instance.id,
         "shape": instance.world.shape,
         "events": instance.horizon,
-        "prompt_version": COMPLETION_PROMPT_VERSION,
+        "benchmark": "Grid-Bench",
         "prompt_characters": len(prompt),
         "reference_state": gold.final_state.to_dict(),
         "reference_score": score_prediction(prediction, gold).to_dict(),

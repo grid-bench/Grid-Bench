@@ -1,67 +1,85 @@
-# Released data
+# Benchmark and measurement data
 
-The companion Hugging Face candidate has two configurations, each with one
-`test` split. It contains no training or validation split.
+The companion data package has two configurations, each with one `test` split:
 
-| Configuration | Rows | Meaning |
+| Configuration | Rows | Contents |
 | --- | ---: | --- |
-| `benchmark` | 1,488 | Unique grid prediction instances |
-| `results` | 8,928 | Six recorded evaluation results per benchmark instance |
+| `benchmark` | 1,488 | Instances, exact prompts, and simulator references |
+| `results` | 8,928 | Recorded evaluation measurements for six models |
 
-Each configuration has JSONL and Parquet representations as
-`data/benchmark.{jsonl,parquet}` and `data/results.{jsonl,parquet}`. JSON-string fields retain heterogeneous
-native objects without flattening event or state structure.
+Both are supplied as JSONL and Parquet under `data/`. There are no training or
+validation splits. The planned dataset destination is
+[xzx34/Grid-Bench](https://huggingface.co/datasets/xzx34/Grid-Bench); until
+publication, use the prepared data directory locally.
 
-## Load a local candidate
+## Load benchmark instances
 
-Install Hugging Face Datasets separately if desired. With a local candidate:
+```python
+from grid_bench.dataset import load_benchmark
+
+benchmark = load_benchmark("/path/to/Grid-Bench-data", view="main")
+for item in benchmark:
+    print(item.public_id, item.prompt)
+```
+
+The loader also accepts `data/benchmark.jsonl` directly or an iterable of rows,
+including a Hugging Face Dataset. To load both configurations with the optional
+`datasets` library:
 
 ```python
 from datasets import load_dataset
 
-benchmark = load_dataset(
-    "/absolute/path/to/huggingface", "benchmark", split="test"
-)
-results = load_dataset(
-    "/absolute/path/to/huggingface", "results", split="test"
-)
-print(benchmark[0]["prompt"])
+benchmark = load_dataset("/path/to/Grid-Bench-data", "benchmark", split="test")
+results = load_dataset("/path/to/Grid-Bench-data", "results", split="test")
 ```
 
-Standard-library users can stream the JSONL files directly. Public download
-instructions and immutable remote revisions will be added when the destinations
-are confirmed.
+## Views and sample units
 
-## Identities and views
+| View | Instances | Trajectories |
+| --- | ---: | ---: |
+| `main` | 1,152 | 192 |
+| `workload` | 528 | 88 |
+| `all` | 1,488 | 248 |
 
-`public_id` combines `source_dataset` and `instance_id`; use it to join results
-to benchmark rows. `public_trajectory_id` combines the source dataset and native
-`rollout_id`. Native IDs and source metadata remain available independently.
+The workload view combines 336 additional instances with 192 reused main
+instances. The views overlap: do not add their row counts as if they were
+separate test sets. Row flags `in_main` and `in_workload` define membership.
 
-The main view has 1,152 instances from 192 trajectories. Seven additional
-workload conditions contribute 336 instances from 56 trajectories. Together
-they make 1,488 instances from 248 trajectories. The 528-instance workload view
-includes those 336 plus 192 reused main instances. Filter `in_main` or
-`in_workload`; do not concatenate the two views as disjoint test sets.
+Each trajectory supplies six prefixes, with 0, 1, 8, 16, 32, and 64 events.
+Prefixes share an underlying history. Statistical analyses should preserve
+that grouping; the study's confidence intervals resample trajectories.
 
-Each trajectory contributes six history lengths: 0, 1, 8, 16, 32, and 64. The
-original and expansion cohorts use different trajectory indices and are pooled
-in the current release.
+`public_id` uniquely identifies an instance across all source groups.
+`public_trajectory_id` identifies its underlying trajectory. Join predictions
+and measurements by these identifiers, not by row order.
 
-## Model inputs and references
+## Inputs, references, and measurements
 
-- `instance_json` is the native input object.
-- `reference_json` is the native gold record, including the final state.
-- `prompt` is the exact text supplied in formal evaluation.
-- `prompt_version` describes that formal text: `spatial-worlds-prompt/0.4`.
-- `source_prompt_version` preserves the original instance metadata.
-- Hash fields identify the corresponding source instance, gold, and prompt.
+- `prompt` is the exact model input used for the study.
+- `instance_json` stores the initial world, events, and metadata.
+- `reference_json` stores the simulator's final state and event workloads.
+- Hash fields identify the source instance, reference, and prompt.
 
-Only `prompt` is model input in the formal interface. Reference answers,
-result records, and diagnostic metadata are evaluation-side information.
+Send only `prompt` to a model. References and measurement records are used on
+the evaluation side. JSON-string fields preserve nested event/state structures
+without flattening them into columns.
 
-The results configuration preserves measurements for all six models, including
-requests with absent and invalid answers: validity, scores, termination, and
-available usage fields. It excludes model text, predicted grids, answer hashes,
-and free-text parsing errors. See the dataset card and machine-readable schema
-for the full fields. The data are licensed under CC BY 4.0.
+The `results` configuration records correctness, validity, cell-error counts,
+termination, request settings, and available token usage for all six models.
+It contains no model answer text, predicted grids, answer hashes, or free-text
+parsing errors. Its machine-readable schema documents every field.
+
+## Provenance and licensing
+
+The public software uses the Grid-Bench name. Frozen records retain the
+serialized identifiers `spatial-worlds/0.2` (schema) and
+`spatial-worlds-prompt/0.4` (formal prompt); `source_prompt_version` records the
+original source metadata independently. These identifiers support byte-level
+provenance and do not select a different public package. Default prompt
+rendering matches the formal prompt.
+
+The manifests distinguish original source identities from exported file
+hashes. The [reproduction workflow](reproduction.md) verifies the package
+inventory and replays all reference instances. Original benchmark data and the
+released measurement compilation are licensed under CC BY 4.0; see the
+package's license and dataset card.

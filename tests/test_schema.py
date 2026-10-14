@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from spatial_worlds.schema import SCHEMA_VERSION, Event, Instance, WorldSpec
+from grid_bench.schema import SCHEMA_VERSION, Event, Instance, WorldSpec
 
 
 def test_world_spec_round_trip() -> None:

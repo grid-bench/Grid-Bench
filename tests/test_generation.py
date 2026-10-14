@@ -10,8 +10,8 @@ from types import SimpleNamespace
 
 import pytest
 
-import spatial_worlds.generation.dataset as dataset_module
-from spatial_worlds.generation import (
+import grid_bench.generation.dataset as dataset_module
+from grid_bench.generation import (
     FAMILY_DEFAULTS,
     PRESETS,
     CellSpec,
@@ -32,10 +32,10 @@ from spatial_worlds.generation import (
     shape_for,
     shape_stats,
 )
-from spatial_worlds.generation.initial import regions, sample_initial
-from spatial_worlds.registry import family_ids, get_family, validate_instance
-from spatial_worlds.schema import GoldRecord, Instance, WorldSpec
-from spatial_worlds.simulate import simulate
+from grid_bench.generation.initial import regions, sample_initial
+from grid_bench.registry import family_ids, get_family, validate_instance
+from grid_bench.schema import GoldRecord, Instance, WorldSpec
+from grid_bench.simulate import simulate
 
 TINY = {
     "name": "tiny",
@@ -242,7 +242,7 @@ def test_family_policies_hold_in_generated_events(family_id: str) -> None:
 
 
 def test_rejection_criteria_raise_generation_errors() -> None:
-    from spatial_worlds.generation import RejectionConfig
+    from grid_bench.generation import RejectionConfig
 
     cell = _cell("metric_paint", 2)
     # short rollouts receive a zero no-op quota, so only an impossible floor rejects them
@@ -270,8 +270,8 @@ def test_region_initializer_hits_density_and_labels_neighbours_distinctly() -> N
 
 
 def test_set_policies_respect_band_and_labels() -> None:
-    from spatial_worlds.generation.setpolicy import POLICIES, propose_set
-    from spatial_worlds.grid import Grid
+    from grid_bench.generation.setpolicy import POLICIES, propose_set
+    from grid_bench.grid import Grid
 
     world = WorldSpec((5, 5), (0, 1, 2, 3))
     rng = Random(2)
@@ -294,7 +294,7 @@ def test_set_policies_respect_band_and_labels() -> None:
 
 def test_sample_queries_policies() -> None:
     world = WorldSpec((4,), (0, 1))
-    from spatial_worlds.world import WorldState
+    from grid_bench.world import WorldState
 
     initial = WorldState(world, (((0,), 1),))
     final = WorldState(world, (((0,), 1), ((1,), 1), ((2,), 1)))
@@ -398,8 +398,8 @@ def test_build_dataset_writes_consistent_files(tmp_path: Path) -> None:
 
 
 def _relabel_grid(values: list[int]):
-    from spatial_worlds.grid import Grid
-    from spatial_worlds.world import WorldState
+    from grid_bench.grid import Grid
+    from grid_bench.world import WorldState
 
     world = WorldSpec((len(values),), (0, 1, 2, 3))
     return Grid.from_state(WorldState(world, tuple(((i,), v) for i, v in enumerate(values) if v)))
@@ -432,7 +432,7 @@ def test_relabel_proposer_avoids_labels_that_would_merge_components() -> None:
 
 
 def test_candidates_within_tolerance_are_chosen_uniformly() -> None:
-    from spatial_worlds.generation.selection import choose, score_candidate
+    from grid_bench.generation.selection import choose, score_candidate
 
     band = (0.4, 0.6)
     scores = [score_candidate(scan, 60, 0.5, band, tolerance=0.25) for scan in (50, 60, 72, 90)]

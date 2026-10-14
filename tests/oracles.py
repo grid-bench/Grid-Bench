@@ -1,7 +1,7 @@
 """Independent naive implementations of every family rule.
 
 These are deliberately written over coordinate dictionaries with
-``itertools.product`` and no shared code with ``spatial_worlds.grid`` so that
+``itertools.product`` and no shared code with ``grid_bench.grid`` so that
 they can cross-check the reference simulators.  Each oracle returns
 ``(after, scan, predicate)``.
 """
@@ -12,8 +12,8 @@ from collections.abc import Iterator
 from itertools import product
 from random import Random
 
-from spatial_worlds.schema import Event, WorldSpec
-from spatial_worlds.world import WorldState
+from grid_bench.schema import Event, WorldSpec
+from grid_bench.world import WorldState
 
 Coord = tuple[int, ...]
 Dense = dict[Coord, int]

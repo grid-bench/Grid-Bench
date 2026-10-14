@@ -1,5 +1,0 @@
-{
-  "campaign_id": "formal-128k-native-minimax-expand08-01",
-  "expansion_of": "formal-128k-native-minimax-01",
-  "shared_account": {"group": "aws-bedrock-expand08", "buffer_usd": 95}
-}

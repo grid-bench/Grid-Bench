@@ -1,130 +1,123 @@
 # Grid-Bench
 
-**Grid-Bench: Can LLMs Predict How Discrete Worlds Change?**
+**Can LLMs Predict How Discrete Worlds Change?**
 
-Grid-Bench evaluates how language models predict the consequences of spatial
-operations. Each instance supplies an initial grid, explicit rules, and an
-ordered event history as text. The model returns the complete final grid;
-reference execution checks every predicted value.
+Grid-Bench evaluates spatial state prediction under explicit rules. Each
+instance supplies an initial grid and an ordered sequence of spatial operations
+as text. The model returns the complete final grid, and an executable simulator
+checks every predicted value.
 
 Eight operation families cover geometry, neighborhoods, connected regions, and
 movement in two-, three-, and four-dimensional grids. The accompanying study
-evaluates six models on the same **1,488 instances from 248 trajectories**,
-producing **8,928 outcomes**.
+contains **1,488 instances from 248 trajectories** and **8,928 evaluation
+records across six models**.
 
-This is a **private prerelease repository** at
-[grid-bench/Grid-Bench](https://github.com/grid-bench/Grid-Bench). The
-[project website](https://grid-bench.github.io/) and
-[Hugging Face dataset](https://huggingface.co/datasets/xzx34/Grid-Bench) are
-confirmed destinations pending launch. Code is licensed under [MIT](LICENSE);
-original benchmark data use [CC BY 4.0](LICENSE-DATA). The paper link will be
-added after arXiv publication. See [release scope](LICENSE_STATUS.md).
+## Quickstart
 
-Maintainer: Zixiang Xu ([xzx34](https://github.com/xzx34)). The code and dataset
-are maintained as an academic project. The `preferred-citation` entry in
-[CITATION.cff](CITATION.cff) records authorship of the accompanying paper.
-
-## Try an example
-
-Python 3.11 or newer is required. The simulator and scorer have no runtime
-dependencies beyond the Python standard library.
+Requires Python 3.11 or newer. Install from a clone of this repository:
 
 ```sh
+git clone https://github.com/grid-bench/Grid-Bench.git
+cd Grid-Bench
 python -m pip install -e .
 python scripts/quickstart.py
 ```
 
-The quickstart executes a small grid example, renders its prompt, and compares
-the reference answer with copying the initial state. It makes no model calls.
-
-To inspect the same example directly:
-
-```sh
-spatial-worlds render-prompt examples/metric_paint.json \
-  --prompt-version spatial-worlds-prompt/0.4
-spatial-worlds simulate examples/metric_paint.json
-```
-
-The package, import namespace, and CLI retain the names `spatial-worlds`,
-`spatial_worlds`, and `spatial-worlds` for compatibility with the frozen study.
-The benchmark's public name is Grid-Bench.
-
-## Evaluate a model
-
-Use the frozen benchmark package rather than regenerating test questions. Its
-`benchmark` configuration contains one row per instance, including the exact
-formal prompt and a separately stored reference answer. Send only `prompt` to
-the model and retain the instance identity with its answer.
-
-[Evaluation instructions](docs/evaluation.md) explain the JSON answer contract,
-the official scorer, and native CLI inputs. [Dataset documentation](docs/data.md)
-describes local loading, identities, and the main/workload views. Neither the
-quickstart nor installation starts a paid evaluation.
-
-## Reproduce the released results
-
-Place the companion Hugging Face candidate on disk, then run:
+The quickstart runs a small example and scores the reference answer and a
+copy-initial baseline. It needs no credentials or model calls. The simulator,
+generator, prompt renderer, and scorer use only the Python standard library.
 
 ```sh
-python -m pip install -e '.[plots]'
-python scripts/reproduce_release.py \
-  --data /absolute/path/to/huggingface \
-  --out /tmp/grid-bench-reproduced
+grid-bench render-prompt examples/metric_paint.json
+grid-bench simulate examples/metric_paint.json
 ```
 
-This offline command replays the released reference instances and recreates
-the supported result tables and history-length plot from recorded measurements.
-Collected model answers are not distributed, so this command does not rescore
-them. Use the scorer with your own predictions to compute new scores. It does not
-query providers. [Reproduction instructions](docs/reproduction.md) distinguish
-answer rescoring, summary reconstruction, and the archived analysis inputs.
+The Python package is `grid_bench`; the command-line tool is `grid-bench`.
 
-## Task and study
+## Evaluate your model
 
-| Operation | Spatial transformation |
+Load the companion dataset and send each row's `prompt` to your model. Save
+one JSONL record per response:
+
+```json
+{"public_id":"<the instance's public_id>","response":"<the model's returned text>"}
+```
+
+Then score the answers directly:
+
+```sh
+grid-bench evaluate \
+  --data /path/to/Grid-Bench-data \
+  --predictions answers.jsonl \
+  --out evaluation
+```
+
+The default `main` view includes 1,152 instances. Use `--view workload` for
+within-family workload comparisons or `--view all` for all 1,488 instances.
+The evaluator writes summary metrics and per-instance scores, counting missing
+answers in the selected denominator. See the [evaluation guide](docs/evaluation.md)
+for the Python API, answer contract, and metrics.
+
+## Generate and extend tasks
+
+```sh
+grid-bench generate --config examples/quickstart-config.json \
+  --out /tmp/grid-bench-demo
+```
+
+| Operation | Transformation |
 | --- | --- |
 | PAINT | Replace a selected value inside a Manhattan ball |
-| REFLECT | Reflect a rectangular region along one axis |
+| REFLECT | Reflect values within a rectangular region |
 | STENCIL | Aggregate neighboring values in a metric region |
 | MIX | Aggregate values in an occupied, connected neighborhood |
 | RELABEL | Change the label of a connected component |
 | LAYER | Grow or erode a connected region |
-| MOVE | Move a selected value along an axis around obstructions |
+| MOVE | Move selected values along an axis around obstructions |
 | COMPRESS | Pack and merge equal values along axis-aligned lines |
 
-Every history uses one operation family, with possible SET assignments.
-The released histories have 0, 1, 8, 16, 32, or 64 events. A model receives the
-whole supplied history and predicts its final state in one response. See
-[task and format guide](docs/task-and-format.md) for coordinates and semantics.
+Each history uses one operation family, with optional SET assignments. The
+model receives the complete history and predicts its final state in one
+response. The [task definitions](docs/tasks.md) specify all transitions;
+the [generation guide](docs/generation.md) explains configuration and extensions.
 
-The study covers GPT-5.6 Sol, Claude 5 Sonnet, GPT-5.4 Mini, GLM-5, Kimi K2.5,
-and MiniMax M2.5 in this order. Their shared conditions and model-specific
-request settings are recorded in the outcome data. Complete-state accuracy,
-cell errors, and changed/preserved-cell diagnostics describe different aspects
-of the returned answers.
-
-## Repository map
-
-| Path | Contents |
-| --- | --- |
-| `src/spatial_worlds/` | Rules, generation, prompt rendering, scoring, and providers |
-| `examples/` | Small examples and a three-prefix generation configuration |
-| `scripts/quickstart.py` | One-command offline example |
-| `scripts/reproduce_release.py` | Offline release verification and result reconstruction |
-| `tests/` | Portable tests and marked tests requiring the original evidence archive |
-| `configs/` | Generation and collection configuration sources |
-| `docs/` | Task, data, evaluation, and reproduction instructions |
-| `CITATION.cff` | Software metadata and the accompanying paper citation |
-
-For development:
+## Reproduce the study summaries
 
 ```sh
-python -m pip install -e '.[dev,eval,plots]'
-pytest -m 'not frozen_data'
-ruff check src tests
+python -m pip install -e '.[plots]'
+python scripts/reproduce_release.py \
+  --data /path/to/Grid-Bench-data \
+  --out /tmp/grid-bench-reproduced
+```
+
+This offline workflow verifies prompts and reference states, reconstructs six
+result tables, and plots accuracy by history length. It uses released
+measurements; collected model answers are not distributed. See the
+[reproduction guide](docs/reproduction.md) for the checks and outputs.
+
+## Data, citation, and license
+
+The [dataset guide](docs/data.md) describes the benchmark and measurement
+configurations, sample units, and provenance. Code is licensed under
+[MIT](LICENSE); original benchmark data use [CC BY 4.0](LICENSE-DATA).
+[CITATION.cff](CITATION.cff) contains the paper citation and software metadata.
+Maintainer: Zixiang Xu ([xzx34](https://github.com/xzx34)).
+
+The repository is currently private. The planned
+[project website](https://grid-bench.github.io/) and
+[Hugging Face dataset](https://huggingface.co/datasets/xzx34/Grid-Bench) will
+be linked at launch; the paper URL will follow its arXiv publication.
+
+## Development
+
+```sh
+python -m pip install -e '.[dev,plots]'
+pytest
+ruff check src tests scripts examples
 pyright
 ```
 
-See [contribution guidance](CONTRIBUTING.md) and [change history](CHANGELOG.md).
-The website is being prepared separately; it is not required to use the code
-or data.
+The repository maintains the implementation directly in `src/grid_bench/`,
+with self-contained tests in `tests/`. See [CONTRIBUTING.md](CONTRIBUTING.md)
+for changes to rules, scoring, and data, and [CHANGELOG.md](CHANGELOG.md) for
+release notes.

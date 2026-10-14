@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from spatial_worlds.schema import GoldRecord, WorldSpec
-from spatial_worlds.scoring import score_prediction
-from spatial_worlds.world import WorldState
+from grid_bench.schema import GoldRecord, WorldSpec
+from grid_bench.scoring import score_prediction
+from grid_bench.world import WorldState
 
 
 def make_gold(cells: tuple[tuple[tuple[int, ...], int], ...]) -> GoldRecord:
@@ -84,7 +84,7 @@ def test_duplicate_json_keys_are_rejected() -> None:
 
 
 def test_query_scoring_is_strict_and_reports_query_accuracy() -> None:
-    from spatial_worlds.scoring import score_query_prediction
+    from grid_bench.scoring import score_query_prediction
 
     gold = make_gold((((0, 0), 1), ((1, 1), 2)))
     queries = [(0, 0), (1, 0), (1, 1)]

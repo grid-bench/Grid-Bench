@@ -1,6 +1,7 @@
 cff-version: 1.2.0
 message: "Please cite the accompanying paper in preferred-citation when using Grid-Bench. Publication identifiers will be added when verified."
 type: software
+version: 0.6.0
 license: MIT
 repository-code: "https://github.com/grid-bench/Grid-Bench"
 title: "Grid-Bench"

@@ -5,23 +5,25 @@ from typing import cast
 
 import pytest
 
-from spatial_worlds.prompt import (
+from grid_bench.prompt import (
+    COMPLETION_PREFIX,
+    LEGACY_PROMPT_VERSION,
     PROMPT_VERSION,
     render_answer,
     render_grid,
     render_prompt,
     render_query_answer,
 )
-from spatial_worlds.registry import family_ids, get_family
-from spatial_worlds.schema import Event, Instance, WorldSpec
-from spatial_worlds.world import WorldState
+from grid_bench.registry import family_ids, get_family
+from grid_bench.schema import Event, Instance, WorldSpec
+from grid_bench.world import WorldState
 
 
 def test_prompt_is_complete_concise_and_game_neutral(small_instance: Instance) -> None:
     prompt = render_prompt(small_instance)
     lowered = prompt.lower()
 
-    assert PROMPT_VERSION == "spatial-worlds-prompt/0.3"
+    assert LEGACY_PROMPT_VERSION == "spatial-worlds-prompt/0.3"
     assert "SET" in prompt
     assert "PAINT" in prompt
     assert "\nEXAMPLE\nOn shape [7]" in prompt
@@ -65,7 +67,11 @@ def test_prompt_template_is_byte_stable(small_instance: Instance) -> None:
         "Include every nonzero cell exactly once in lexicographic coordinate order. "
         "Output the JSON object only, with no code fence or other text."
     )
-    assert render_prompt(small_instance) == expected
+    assert render_prompt(small_instance, prompt_version=LEGACY_PROMPT_VERSION) == expected
+    assert render_prompt(small_instance) == COMPLETION_PREFIX + expected
+    assert render_prompt(small_instance) == render_prompt(
+        small_instance, prompt_version=PROMPT_VERSION
+    )
 
 
 def test_every_family_rule_card_renders_and_avoids_game_names() -> None:
@@ -250,7 +256,7 @@ def test_query_contract_changes_only_task_and_output(small_instance: Instance) -
     prompt = render_prompt(queried)
     base = render_prompt(small_instance)
     assert prompt.startswith(
-        "TASK\nApply all events in order and return the final value of each query cell."
+        COMPLETION_PREFIX + "TASK\nApply all events in order and return the final value of each query cell."
     )
     assert prompt.endswith("QUERIES\n[[1,1],[0,0]]")
     assert 'Return only {"values":[[q,v],...]}' in prompt
@@ -283,7 +289,7 @@ def test_render_answer_emits_canonical_json(small_instance: Instance) -> None:
 def test_shuffled_representation_reorders_only_the_initial_listing(
     small_instance: Instance,
 ) -> None:
-    from spatial_worlds.prompt import shuffled_cells
+    from grid_bench.prompt import shuffled_cells
 
     canonical = render_prompt(small_instance)
     shuffled = render_prompt(small_instance, representation="cells_shuffled")

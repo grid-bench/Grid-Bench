@@ -1,96 +1,113 @@
-# Evaluating predictions
+# Evaluating model predictions
 
-Use the frozen instances and exact prompts from the companion data package.
-Each instance is requested separately. Keep the public instance ID beside the
-delivered answer so that model results can be joined without depending on file
-order.
+The same evaluator serves the command line and Python API. It takes benchmark
+instances plus one delivered response per instance, and reports complete-state
+accuracy together with cell-level diagnostics. No provider SDK or API key is
+needed to score saved answers.
 
-## Score one answer
-
-This example reads a released row, extracts a complete answer from a local text
-file, and uses the official full-world scorer. The reference is used only for
-scoring, never as model input.
+## Collect answers
 
 ```python
 import json
 from pathlib import Path
 
-from spatial_worlds.eval.extract import extract_final_answer
-from spatial_worlds.schema import GoldRecord
-from spatial_worlds.scoring import score_prediction
+from grid_bench.dataset import load_benchmark
 
-data_root = Path("/absolute/path/to/huggingface")
-with (data_root / "data/benchmark.jsonl").open() as source:
-    row = json.loads(next(source))
-
-model_input = row["prompt"]
-# Send model_input to your model and save its delivered answer as answer.txt.
-answer = Path("answer.txt").read_text(encoding="utf-8")
-gold = GoldRecord.from_dict(json.loads(row["reference_json"]))
-extraction = extract_final_answer(answer)
-score = score_prediction(extraction.text or "", gold)
-print(row["public_id"], score.to_dict())
+# Replace your_model with your own inference function.
+benchmark = load_benchmark("/path/to/Grid-Bench-data", view="main")
+with Path("answers.jsonl").open("w", encoding="utf-8") as output:
+    for item in benchmark:
+        response = your_model(item.prompt)  # Your model client returns text.
+        output.write(json.dumps({
+            "public_id": item.public_id,
+            "response": response,
+        }) + "\n")
 ```
 
-The fixed extractor can locate a complete JSON answer in surrounding text.
-It does not fill missing coordinates, repair values, or execute events for the
-model. Keep both the delivered text and the extracted answer when recording a
-run. Scoring the delivered text directly gives the strict text-contract check;
-scoring the extracted text gives semantic full-world exact match.
+Use one file per model and evaluation condition. Keep the full delivered answer
+in `response`; do not pre-extract JSON or choose among answers using scores.
+The evaluator applies the fixed extraction rule. Record your model version,
+generation settings, and any tools or extra instructions alongside the run.
+
+## Evaluate
+
+```sh
+grid-bench evaluate \
+  --data /path/to/Grid-Bench-data \
+  --predictions answers.jsonl \
+  --view main \
+  --out evaluation
+```
+
+`--data` accepts the companion package directory, a benchmark JSONL file, or
+a dataset directory created by `grid-bench generate`. Available views are
+`main` (default), `workload`, and `all`; see [dataset views](data.md).
+
+The output directory contains `summary.json` with aggregate and grouped results,
+and `scores.jsonl` with one record for every selected instance. Missing answers
+receive zero exact match. Duplicate or unknown `public_id` values are errors.
+Known instances outside the selected view are ignored and counted, so a full
+answer file can be evaluated on each view without rewriting it.
+
+In Python:
+
+```python
+from grid_bench.evaluation import evaluate_predictions, load_benchmark
+
+benchmark = load_benchmark("/path/to/Grid-Bench-data", view="main")
+report = evaluate_predictions(benchmark, "answers.jsonl")
+print(report["summary"]["em"])
+print(report["summary"]["valid_state_rate"])
+```
+
+`load_benchmark` also accepts an iterable of benchmark rows, and
+`evaluate_predictions` accepts an iterable of prediction records. Set
+`verify_references=True` when loading to re-execute the supplied reference states.
+
+## Answer contract and extraction
+
+A complete-state answer is a JSON object containing only `cells`:
+
+```json
+{"cells": [[[0, 0], 2], [[1, 1], 1]]}
+```
+
+Include each nonzero cell exactly once; omitted cells mean zero. Coordinates
+must be in bounds and values must belong to the instance's alphabet. Duplicate
+coordinates, explicit zero entries, and extra keys invalidate the state.
+Lexicographic coordinate order is canonical, but a different order can still
+be semantically correct. See [formats](formats.md) for complete contracts.
+
+The extractor strips surrounding whitespace, accepts a single enclosing code
+fence, and otherwise selects the last top-level object candidate. If that last
+candidate is malformed or incomplete, extraction fails; it does not fall back
+to an earlier object or repair the answer. Only delivered response text is
+examined.
 
 ## Metrics
 
-**Exact match** is one only when a valid complete state equals the reference at
-every coordinate. Incorrect, invalid, and absent answers score zero, preserving
-the full evaluated denominator.
+| Metric | Meaning |
+| --- | --- |
+| `em` | Fraction of all selected instances with an exact final state after extraction |
+| `strict_em` | Exact-match fraction when scoring delivered text directly |
+| `valid_state_rate` | Fraction returning a state that satisfies the answer schema |
+| Wrong cells | Number of coordinates differing from the reference in a valid state |
+| Cell accuracy | Fraction of grid cells equal to the reference in a valid state |
 
-For a valid state, **wrong cells** counts unequal coordinates and **cell
-accuracy** is the fraction of all grid cells with the correct value. The
-low-level scorer returns `cell_accuracy = 0.0` and `wrong_cells = null` for an
-invalid state; analyses of returned states must use the stated valid-answer
-subset rather than treating that sentinel as an observed spatial error count.
+Invalid, empty, and missing answers have zero exact match. Validity does not
+require correctness. `strict_em` checks the raw JSON contract, not byte-level
+identity or coordinate order; canonical validity is reported separately.
 
-Changed/preserved-cell diagnostics compare the final reference with the initial
-world. A preserved cell has the same initial and final value; it may have changed
-during the intervening history. Empty conditional subsets have no estimated
-accuracy and remain null in release summaries.
+The aggregate `cell_accuracy_valid_only` averages over `n_valid` returned
+states and is null if none are valid. Per-instance invalid states retain a zero
+cell-accuracy sentinel; they do not enter this conditional mean. Wrong-cell
+summaries use valid incorrect states and report their own count. These summaries
+also separate errors on cells that should change from those whose final
+value should equal the initial value. These two subsets are defined by initial
+and final reference states; a preserved cell may change during intermediate
+events. Empty diagnostic subsets have null statistics.
 
-## Small end-to-end CLI example
-
-The included configuration generates one trajectory at three prefixes. These
-commands execute the reference provider and make no API calls:
-
-```sh
-spatial-worlds generate --config examples/quickstart-config.json \
-  --out /tmp/grid-bench-quickstart
-spatial-worlds run --data /tmp/grid-bench-quickstart \
-  --provider oracle --out /tmp/grid-bench-oracle.jsonl
-spatial-worlds evaluate --data /tmp/grid-bench-quickstart \
-  --predictions /tmp/grid-bench-oracle.jsonl \
-  --out /tmp/grid-bench-scores
-```
-
-This is a simulator/scorer demonstration on newly generated example instances.
-For formal comparisons, use the frozen instances and their exact released
-prompts, together with the formal extraction rule shown above.
-
-For the frozen release, `scripts/reproduce_release.py` can export native CLI
-inputs with `--export-cli /tmp/grid-bench-cli`. The generated guide identifies
-the dataset-specific instance and gold paths; preserve those source groupings
-when passing `--instances` and `--gold` to the CLI.
-
-## Optional provider runs
-
-Install `.[eval]` only when a provider SDK is needed. Inspect
-`spatial-worlds run --help`, supply credentials through the provider's environment
-variable, and choose a small explicit `--limit` and generation budget for a first
-live run. A new run is a new evaluation condition: record the model identifier,
-prompt version, generation parameters, and delivered outcomes.
-
-The published study used prompt 0.4, one answer per instance, no tools, a
-128,000-token combined reasoning-and-answer ceiling, and a 7,200-second deadline.
-Temperature, `top_p`, and seed were omitted. Five model interfaces requested
-high reasoning effort; MiniMax M2.5 used native always-on thinking. The released
-scientific request fields preserve these native differences. Historical
-collection configurations identify the original evidence; they are not a
-ready-made configuration for every user's provider account.
+For a single delivered response, use `score_answer(response, instance, gold)`
+from `grid_bench.evaluation`; it applies the same extraction and diagnostics.
+The low-level `score_prediction` function scores JSON directly against a
+`GoldRecord`, without text extraction.

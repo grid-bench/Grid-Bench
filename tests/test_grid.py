@@ -5,9 +5,9 @@ from random import Random
 
 import pytest
 
-from spatial_worlds.grid import Grid, hamming, shape_tables
-from spatial_worlds.schema import WorldSpec
-from spatial_worlds.world import WorldState
+from grid_bench.grid import Grid, hamming, shape_tables
+from grid_bench.schema import WorldSpec
+from grid_bench.world import WorldState
 
 from oracles import component as oracle_component
 from oracles import neighbors as oracle_neighbors

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from spatial_worlds.registry import get_family
-from spatial_worlds.schema import Event, WorldSpec
-from spatial_worlds.world import WorldState
+from grid_bench.registry import get_family
+from grid_bench.schema import Event, WorldSpec
+from grid_bench.world import WorldState
 
 
 def line(values: list[int], alphabet: tuple[int, ...] = (0, 1, 2, 3)) -> WorldState:

@@ -1,5 +1,0 @@
-{
-  "campaign_id": "formal-128k-high-glm-kimi-expand08-01",
-  "expansion_of": "formal-128k-high-glm-kimi-01",
-  "shared_account": {"group": "aws-bedrock-expand08", "buffer_usd": 95}
-}

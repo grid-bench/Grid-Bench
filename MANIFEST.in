@@ -1,10 +1,9 @@
 include README.md LICENSE LICENSE-DATA LICENSE_STATUS.md CITATION.cff CONTRIBUTING.md CHANGELOG.md
-include PUBLIC_SOURCE_MANIFEST.json .python-version .gitignore uv.lock
+include .python-version .gitignore uv.lock
 recursive-include .github *.yml
-recursive-include docs *.md *.json
-recursive-include examples *.json
+recursive-include docs *.md
+recursive-include examples *.json *.py
 recursive-include tests *.py
 recursive-include configs *.json
-recursive-include scripts *.py *.sh
-recursive-include paper *.py *.json
+recursive-include scripts *.py
 global-exclude __pycache__ *.py[cod]

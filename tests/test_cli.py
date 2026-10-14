@@ -18,7 +18,7 @@ def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
         source_path if not existing_path else os.pathsep.join((source_path, existing_path))
     )
     return subprocess.run(
-        [sys.executable, "-m", "spatial_worlds", *args],
+        [sys.executable, "-m", "grid_bench", *args],
         cwd=PROJECT_ROOT,
         env=env,
         check=False,
@@ -53,50 +53,46 @@ def test_simulate_command_matches_shipped_gold(tmp_path: Path) -> None:
     assert len(trace["steps"]) == 3 and set(trace["states"]) == {"0", "1", "2", "3"}
 
 
-def test_generate_run_evaluate_report_commands(tmp_path: Path) -> None:
+def test_generate_and_evaluate_commands(tmp_path: Path) -> None:
+    from grid_bench.dataset import load_benchmark
+
     config = tmp_path / "cfg.json"
-    config.write_text(
-        json.dumps(
-            {
-                "name": "cli",
-                "dataset_seed": 1,
-                "split": "dev",
-                "tier": "S",
-                "dims": [1],
-                "t_grid": [0, 1, 2],
-                "t_max": 2,
-                "seeds_per_cell": 1,
-                "families": {"metric_paint": {"w_targets": [7]}},
-            }
-        )
-    )
+    config.write_text(json.dumps({
+        "name": "cli", "dataset_seed": 1, "split": "dev", "tier": "S",
+        "dims": [1], "t_grid": [0, 1, 2], "t_max": 2, "seeds_per_cell": 1,
+        "families": {"metric_paint": {"w_targets": [7]}},
+    }))
     data = tmp_path / "data"
     generated = run_cli("generate", "--config", str(config), "--out", str(data), "--quiet")
     assert generated.returncode == 0, generated.stderr
     assert "wrote 3 instances" in generated.stdout
-    predictions = tmp_path / "pred.jsonl"
-    ran = run_cli(
-        "run", "--data", str(data), "--provider", "oracle", "--out", str(predictions), "--quiet"
-    )
-    assert ran.returncode == 0, ran.stderr
+    benchmark = load_benchmark(data)
+    predictions = tmp_path / "answers.jsonl"
+    predictions.write_text("".join(json.dumps({
+        "public_id": item.public_id, "response": json.dumps(item.gold.final_state.to_dict()),
+    }) + "\n" for item in benchmark))
     results = tmp_path / "results"
-    evaluated = run_cli(
-        "evaluate",
-        "--data",
-        str(data),
-        "--predictions",
-        str(predictions),
-        "--out",
-        str(results),
-        "--bootstrap",
-        "5",
-    )
+    evaluated = run_cli("evaluate", "--data", str(data), "--predictions", str(predictions),
+                        "--out", str(results), "--verify-references")
     assert evaluated.returncode == 0, evaluated.stderr
-    reported = run_cli("report", "--results", str(results))
-    assert reported.returncode == 0, reported.stderr
-    assert (results / "summary.md").exists()
-    rendered = run_cli("render-prompt", str(data / "dev" / "metric_paint" / "instances.jsonl"))
-    assert rendered.returncode == 2
+    summary = json.loads((results / "summary.json").read_text())
+    assert summary["summary"]["n_instances"] == 3
+    assert summary["summary"]["em"] == 1.0
+    assert len((results / "scores.jsonl").read_text().splitlines()) == 3
+    predictions.write_text("")
+    missing = run_cli("evaluate", "--data", str(data), "--predictions", str(predictions),
+                      "--out", str(results))
+    assert missing.returncode == 0
+    assert json.loads((results / "summary.json").read_text())["summary"]["n_missing"] == 3
+
+
+def test_demo_runs_without_model_or_repository_assets() -> None:
+    result = run_cli("demo")
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)["reference_score"]["em"] is True
+    help_result = run_cli("--help")
+    assert "grid-bench" in help_result.stdout
+    assert "study" not in help_result.stdout
 
 
 def test_validate_and_render_example() -> None:
@@ -109,30 +105,6 @@ def test_validate_and_render_example() -> None:
     assert "PAINT" in rendered.stdout
     assert "SET" in rendered.stdout
 
-
-def test_score_command_reports_exact_match(tmp_path: Path) -> None:
-    gold_path = tmp_path / "gold.json"
-    prediction_path = tmp_path / "prediction.json"
-    gold_path.write_text(
-        json.dumps(
-            {
-                "schema_version": "spatial-worlds/0.2",
-                "instance_id": "cli-score",
-                "family": "metric_paint",
-                "world": {"shape": [2, 2], "values": [0, 1, 2]},
-                "final_state": {"cells": [[[0, 0], 1]]},
-                "workloads": [],
-            }
-        ),
-        encoding="utf-8",
-    )
-    prediction_path.write_text('{"cells":[[[0,0],1]]}', encoding="utf-8")
-
-    result = run_cli("score", str(gold_path), str(prediction_path))
-
-    assert result.returncode == 0, result.stderr
-    assert '"exact_match"' in result.stdout
-    assert "true" in result.stdout.lower()
 
 
 def test_validate_instance_rejects_duplicate_json_keys(tmp_path: Path) -> None:

@@ -1,4 +1,4 @@
-"""The portable release reader must reject tampering and incomplete result panels."""
+"""The public measurement reader rejects tampering and incomplete result panels."""
 
 from __future__ import annotations
 
@@ -8,108 +8,164 @@ from pathlib import Path
 
 import pytest
 
+from grid_bench.analysis import LENGTHS, MODELS, TASKS, group_stats
+from grid_bench.prompt import PROMPT_VERSION, render_prompt
+from grid_bench.schema import GoldRecord, Instance
 from scripts.reproduce_release import (
-    SCORE_FIELDS,
+    TABLE_COUNTS,
+    TABLE_KEYS,
     digest,
+    reference_index,
     reproduce_tables,
-    rescore,
     result_rows,
     validate_table_coverage,
     verify_manifest,
 )
-from spatial_worlds.eval.aggregate import score_formal_record
-from spatial_worlds.prompt import COMPLETION_PROMPT_VERSION, render_prompt
-from spatial_worlds.schema import GoldRecord, Instance
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def fixture_panel() -> tuple[list[dict], list[dict]]:
+    """Create measurement-only records from the bundled simulator example."""
     instance_object = json.loads((ROOT / "examples/metric_paint.json").read_text())
     reference_object = json.loads((ROOT / "examples/metric_paint.gold.json").read_text())
     instance = Instance.from_dict(instance_object)
     gold = GoldRecord.from_dict(reference_object)
-    prompt = render_prompt(instance, prompt_version=COMPLETION_PROMPT_VERSION)
+    initial, final = instance.initial.as_dict(), gold.final_state.as_dict()
+    changed = sum(initial.get(p, 0) != final.get(p, 0) for p in initial.keys() | final.keys())
+    prompt = render_prompt(instance, prompt_version=PROMPT_VERSION)
+    instance_json, reference_json = json.dumps(instance_object), json.dumps(reference_object)
+    identity = {
+        "public_id": f"main:{instance.id}", "instance_id": instance.id,
+        "source_dataset": "main", "public_trajectory_id": f"main:{instance.id}",
+        "rollout_id": instance.id, "cohort": "example", "history_length": instance.horizon,
+        "prompt_version": PROMPT_VERSION, "prompt_sha256": digest(prompt.encode()),
+    }
     benchmark = [{
-        "public_id": "main:example", "instance_id": instance.id, "source_dataset": "main",
-        "instance_json": json.dumps(instance_object), "reference_json": json.dumps(reference_object),
-        "prompt_version": COMPLETION_PROMPT_VERSION, "prompt": prompt,
-        "prompt_sha256": digest(prompt.encode()), "in_main": True, "in_workload": False,
+        **identity, "instance_json": instance_json, "reference_json": reference_json,
+        "instance_sha256": digest(instance_json.encode()),
+        "gold_sha256": digest(reference_json.encode()), "prompt": prompt,
+        "family": instance.family, "dimension": instance.dimension,
+        "shape": list(instance.world.shape), "workload": 0,
+        "in_main": True, "in_workload": False,
     }]
-    outcomes = []
-    for model, text in (
-        ("wrapped", "Final answer:\n```json\n" + json.dumps(gold.final_state.to_dict()) + "\n```"),
-        ("empty", ""),
-    ):
-        record = {
-            "raw_text": text, "model": model, "scoring_version": "spatial-worlds-scoring/1.0",
-            "evaluation_protocol": "spatial-worlds-evaluation/1.6", "answer_eligible": True,
-            "collection_finalized": True, "protocol_violation": None, "refusal": False,
-            "termination": "complete" if text else "length", "finish_reason": "stop",
-            "usage": {"output_tokens": 50},
-        }
-        scored = score_formal_record(record, instance, gold)
-        outcomes.append({
-            "public_id": "main:example", "model_id": model, "model_name": model,
-            "delivered_text": text, "delivered_text_sha256": digest(text.encode()),
-            "usage_json": json.dumps(record["usage"]), "visible_text_empty": not text.strip(),
-            **{key: record[key] for key in (
-                "scoring_version", "evaluation_protocol", "answer_eligible", "collection_finalized",
-                "protocol_violation", "refusal", "termination", "finish_reason",
-            )},
-            **{key: scored[key] for key in SCORE_FIELDS},
+    results = []
+    for model, valid, wrong in (("exact", True, 0), ("partial", True, 3), ("empty", False, None)):
+        results.append({
+            **identity, "model_id": model, "model_name": model,
+            "em": valid and wrong == 0, "strict_em": False,
+            "valid_state": valid, "wrong_cells": wrong,
+            "cell_accuracy": (9 - wrong) / 9 if wrong is not None else 0.0,
+            "answer_status": "valid" if valid else "empty", "visible_text_empty": not valid,
+            "termination": "stop" if valid else "length", "total_cells": 9,
+            "changed_cells": changed, "copy_baseline_em": changed == 0,
+            "copy_baseline_cell_accuracy": (9 - changed) / 9,
+            "zero_baseline_em": not final, "zero_baseline_cell_accuracy": (9 - len(final)) / 9,
+            "usage_json": json.dumps({"output_tokens": 50}),
         })
-    return benchmark, outcomes
+    return benchmark, results
 
 
-def test_release_reextracts_wrapped_answer_and_keeps_empty_failure() -> None:
-    benchmark, outcomes = fixture_panel()
-    scored = rescore(benchmark, outcomes)
-    assert scored[0]["em"] and not scored[0]["strict_em"]
-    assert scored[0]["wrong_cells"] == 0
-    assert not scored[1]["em"] and not scored[1]["valid_state"]
-    assert scored[1]["answer_status"] == "empty"
-    assert scored[1]["wrong_cells"] is None
+def test_public_measurements_rebuild_statistics_without_answers() -> None:
+    benchmark, measurements = fixture_panel()
+    joined = result_rows(benchmark, measurements)
+    assert all("delivered_text" not in row for row in joined)
+    assert group_stats(joined) == {
+        "n": 3, "correct": 1, "em": 1 / 3, "strict_correct": 0, "extracted_correct": 1,
+        "valid": 2, "valid_wrong": 1, "empty": 1, "length_empty": 1, "other_empty": 0,
+        "length_terminated": 1, "invalid_nonempty": 0, "refusal": 0,
+        "cell_accuracy_valid_only": (1 + 2 / 3) / 2,
+        "wrong_cells_median_valid_incorrect": 3, "output_tokens": 150,
+    }
 
 
-@pytest.mark.parametrize("field,value", [
-    ("em", False), ("wrong_cells", 1), ("total_cells", 99),
-    ("changed_cells", 999), ("copy_baseline_cell_accuracy", 999.0),
-    ("zero_baseline_cell_accuracy", 999.0), ("score_error", "invented"),
-])
-def test_stored_scores_are_not_trusted(field: str, value: object) -> None:
-    benchmark, outcomes = fixture_panel()
-    outcomes[0][field] = value
-    with pytest.raises(ValueError, match="Re-score mismatch"):
-        rescore(benchmark, outcomes)
+def test_empty_group_has_no_invented_accuracy_or_median() -> None:
+    summary = group_stats([])
+    assert summary["n"] == 0
+    assert summary["em"] is None
+    assert summary["cell_accuracy_valid_only"] is None
+    assert summary["wrong_cells_median_valid_incorrect"] is None
 
 
-def test_delivered_text_identity_is_checked() -> None:
-    benchmark, outcomes = fixture_panel()
-    outcomes[0]["delivered_text"] = ""
-    with pytest.raises(ValueError, match="hash mismatch"):
-        rescore(benchmark, outcomes)
+@pytest.mark.parametrize("field", ["instance_json", "reference_json", "prompt"])
+def test_benchmark_record_identity_is_checked(field: str) -> None:
+    benchmark, measurements = fixture_panel()
+    benchmark[0][field] += " "
+    with pytest.raises(ValueError, match="hash mismatch|prompt mismatch"):
+        result_rows(benchmark, measurements)
 
 
 def test_formal_prompt_cannot_fall_back_to_old_default() -> None:
-    benchmark, outcomes = fixture_panel()
+    benchmark, measurements = fixture_panel()
     benchmark[0]["prompt_version"] = "spatial-worlds-prompt/0.3"
     with pytest.raises(ValueError, match="prompt version"):
-        rescore(benchmark, outcomes)
+        result_rows(benchmark, measurements)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("instance_id", "other"), ("public_trajectory_id", "wrong"), ("history_length", 999),
+    ("prompt_sha256", "wrong"), ("source_dataset", "other"),
+])
+def test_measurements_are_joined_by_full_identity(field: str, value: object) -> None:
+    benchmark, measurements = fixture_panel()
+    measurements[0][field] = value
+    with pytest.raises(ValueError, match="Result identity mismatch"):
+        result_rows(benchmark, measurements)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("wrong_cells", 8), ("em", False), ("cell_accuracy", 0.5), ("total_cells", 999),
+    ("changed_cells", 99), ("zero_baseline_cell_accuracy", 9), ("answer_status", "empty"),
+])
+def test_inconsistent_measurements_are_rejected(field: str, value: object) -> None:
+    benchmark, measurements = fixture_panel()
+    measurements[0][field] = value
+    with pytest.raises(ValueError, match="Inconsistent"):
+        result_rows(benchmark, measurements)
+
+
+def test_invalid_results_cannot_claim_cells_or_strict_exactness() -> None:
+    benchmark, measurements = fixture_panel()
+    measurements[2]["wrong_cells"] = 4
+    with pytest.raises(ValueError, match="invalid-state"):
+        result_rows(benchmark, measurements)
+    measurements[2]["wrong_cells"] = None
+    measurements[2]["strict_em"] = True
+    with pytest.raises(ValueError, match="strict exact-match"):
+        result_rows(benchmark, measurements)
 
 
 def test_duplicate_or_missing_panel_members_are_rejected() -> None:
-    benchmark, outcomes = fixture_panel()
+    benchmark, measurements = fixture_panel()
     with pytest.raises(ValueError, match="Duplicate benchmark"):
-        rescore(benchmark * 2, outcomes)
-    with pytest.raises(ValueError, match="Duplicate model-instance"):
-        rescore(benchmark, outcomes + [outcomes[0]])
+        result_rows(benchmark * 2, measurements)
+    with pytest.raises(ValueError, match="Duplicate result"):
+        result_rows(benchmark, measurements + [measurements[0]])
     extra = copy.deepcopy(benchmark[0])
-    extra["public_id"] = "main:second"
+    extra.update(source_dataset="rq2", public_id=f"rq2:{extra['instance_id']}",
+                 public_trajectory_id=f"rq2:{extra['rollout_id']}")
     with pytest.raises(ValueError, match="Incomplete shared"):
-        rescore([*benchmark, extra], outcomes)
-    with pytest.raises(ValueError, match="Missing outcome"):
-        rescore(benchmark, [])
+        result_rows([*benchmark, extra], measurements)
+    with pytest.raises(ValueError, match="Incomplete shared"):
+        result_rows(benchmark, [])
+
+
+@pytest.mark.parametrize("field", ["delivered_text", "predicted_state", "error_coordinates"])
+def test_model_answers_are_not_public_measurements(field: str) -> None:
+    benchmark, measurements = fixture_panel()
+    measurements[0][field] = "unpublished"
+    with pytest.raises(ValueError, match="outside the public"):
+        result_rows(benchmark, measurements)
+
+
+def test_reference_execution_detects_tampered_reference() -> None:
+    benchmark, _ = fixture_panel()
+    reference = json.loads(benchmark[0]["reference_json"])
+    reference["final_state"] = {"cells": []}
+    benchmark[0]["reference_json"] = json.dumps(reference)
+    benchmark[0]["gold_sha256"] = digest(benchmark[0]["reference_json"].encode())
+    with pytest.raises(ValueError, match="Reference execution mismatch"):
+        reference_index(benchmark)
 
 
 def manifest_fixture(root: Path) -> None:
@@ -152,9 +208,6 @@ def test_incomplete_frozen_tables_cannot_report_success() -> None:
 
 
 def test_missing_or_duplicated_conditions_are_rejected() -> None:
-    from scripts.reproduce_release import TABLE_COUNTS, TABLE_KEYS
-    from spatial_worlds.eval.expanded_analysis_registry import LENGTHS, MODELS, TASKS
-
     rows = [
         {"model": m, "family": f, "dimension": d, "T": t, "w": 10,
          "in_main": True, "in_workload": False}
@@ -183,32 +236,3 @@ def test_missing_or_duplicated_conditions_are_rejected() -> None:
     tables["task_length"].append(tables["task_length"][0])
     with pytest.raises(ValueError, match="Missing or duplicate"):
         validate_table_coverage(rows, tables)
-
-
-
-def test_public_metrics_rebuild_statistics_without_model_answers() -> None:
-    from scripts.analyze_completed import group_stats
-
-    benchmark, private = fixture_panel()
-    measurements = [{k: v for k, v in row.items()
-                     if k not in {"delivered_text", "delivered_text_sha256", "score_error",
-                                  "protocol_violation"}} for row in private]
-    joined = result_rows(benchmark, measurements)
-    assert group_stats(joined) == group_stats(rescore(benchmark, private))
-    assert all("delivered_text" not in row for row in joined)
-    with pytest.raises(ValueError, match="Duplicate result"):
-        result_rows(benchmark, measurements + [measurements[0]])
-    with pytest.raises(ValueError, match="Incomplete shared"):
-        result_rows(benchmark, [])
-    with pytest.raises(ValueError, match="outside the public"):
-        result_rows(benchmark, private)
-
-
-def test_public_results_reject_inconsistent_exactness() -> None:
-    benchmark, private = fixture_panel()
-    measurements = [{k: v for k, v in row.items()
-                     if k not in {"delivered_text", "delivered_text_sha256", "score_error",
-                                  "protocol_violation"}} for row in private]
-    measurements[0]["wrong_cells"] = 8
-    with pytest.raises(ValueError, match="Inconsistent exact-match"):
-        result_rows(benchmark, measurements)

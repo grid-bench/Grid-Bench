@@ -1,36 +1,44 @@
 # Contributing
 
-Start with the small offline example in the [README](README.md). Changes to
-reference transitions, parsing, or scoring should include a compact fixture
-showing the behavior and a test that checks it independently of the changed
-implementation.
-
-## Development checks
+Grid-Bench is maintained directly in this repository. Start with the offline
+example in the [README](README.md), then run the development checks:
 
 ```sh
-python -m pip install -e '.[dev,eval,plots]'
-pytest -m 'not frozen_data'
-ruff check src tests
+python -m pip install -e '.[dev,plots]'
+pytest
+ruff check src tests scripts examples
 pyright
 ```
 
-Keep code, comments, documentation, and reports in English. Describe a proposed
-change with the affected operation or interface, expected behavior, and a minimal
-reproducer. Include a random seed and input instance when reporting generation
-problems. Omit API credentials and provider account details from reports.
+Tests run without credentials or a private research archive. Keep code,
+comments, and documentation in English. Report a bug with a minimal input,
+expected behavior, and the package version; include the seed and configuration
+for generation problems.
 
-## Compatibility and evidence
+## Rules and scoring
 
-The public benchmark is Grid-Bench; the Python package and protocol identifiers
-retain their existing names. Avoid renaming serialized fields or replacing
-frozen data in place. A correction to released instances, references, prompts,
-or scores requires a new data revision and a changelog entry explaining the
-affected records.
+Changes to transitions, parsing, or scoring should include a compact fixture
+and an independent expected result. Cover boundaries, no-op cases, simultaneous
+updates, and processing order when they apply. See the
+[task definitions](docs/tasks.md), [formats](docs/formats.md), and
+[generation guide](docs/generation.md).
 
-Keep formatting-only and semantic changes separate when practical. New provider
-support should preserve the requested settings, delivered answer, and outcome
-identity. It must not retry a completed answer based on its score.
+Use `grid_bench` for Python imports and `grid-bench` for commands. New public
+interfaces should use the same prompt and scoring defaults as the evaluator.
+Keep experimental variants explicit so an API call and a CLI invocation do not
+silently implement different evaluation conditions.
 
-Public issue and pull-request destinations will be added when the repository is
-published. The current repository is private; see
-[licensing and release scope](LICENSE_STATUS.md) for the MIT code and CC BY 4.0 data.
+## Released data
+
+Preserve published instances, prompts, reference states, and their identifiers.
+A correction requires a new data revision and a changelog entry identifying
+the affected records. Reference execution and scoring equivalence matter when
+refactoring; internal file layouts and Python names may evolve.
+
+The public data contain original synthetic instances and measurements, not
+collected model answer text or predicted states. Use synthetic fixtures in
+pull requests and tests. Do not include credentials or provider account details.
+
+Code contributions use the [MIT license](LICENSE). Original data and examples
+use [CC BY 4.0](LICENSE-DATA). Paper authorship is recorded separately in
+[CITATION.cff](CITATION.cff).

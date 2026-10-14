@@ -6,10 +6,10 @@ from random import Random
 
 import pytest
 
-from spatial_worlds.grid import Grid
-from spatial_worlds.registry import family_ids, get_family
-from spatial_worlds.schema import Event, SchemaError, WorldSpec
-from spatial_worlds.world import WorldState
+from grid_bench.grid import Grid
+from grid_bench.registry import family_ids, get_family
+from grid_bench.schema import Event, SchemaError, WorldSpec
+from grid_bench.world import WorldState
 
 from oracles import FAMILY_VALUES, apply_oracle, from_dense, random_event, random_state, to_dense
 
