@@ -27,7 +27,9 @@ The included configuration creates one PAINT trajectory with three prefixes:
 }
 ```
 
-Use a fresh output directory. `t_max` is the underlying trajectory length;
+Use a new or empty output directory; generation rejects nonempty directories
+so separate runs cannot mix instances or overwrite their manifest.
+`t_max` is the underlying trajectory length;
 `t_grid` selects its prefixes. `seeds_per_cell` is the number of trajectories
 per family, shape, and workload condition. `tier` selects a shape scale and
 `dims` its dimensions. Family defaults are expanded into the output manifest.

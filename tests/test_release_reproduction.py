@@ -194,6 +194,29 @@ def test_member_paths_cannot_escape_release(tmp_path: Path) -> None:
         verify_manifest(tmp_path)
 
 
+def test_hub_download_metadata_does_not_change_release_inventory(tmp_path: Path) -> None:
+    manifest_fixture(tmp_path)
+    download = tmp_path / ".cache/huggingface/download"
+    download.mkdir(parents=True)
+    (download / "data.jsonl.metadata").write_text("download metadata")
+    (download / "data.jsonl.lock").touch()
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".git/HEAD").write_text("ref: refs/heads/main\n")
+    verify_manifest(tmp_path)
+    (tmp_path / "data.jsonl").write_text("modified")
+    with pytest.raises(ValueError, match="checksum"):
+        verify_manifest(tmp_path)
+
+
+def test_unrelated_cache_files_are_not_silently_ignored(tmp_path: Path) -> None:
+    manifest_fixture(tmp_path)
+    other_cache = tmp_path / ".cache/other"
+    other_cache.mkdir(parents=True)
+    (other_cache / "untracked.json").write_text("{}")
+    with pytest.raises(ValueError, match="inventory"):
+        verify_manifest(tmp_path)
+
+
 def test_symlinked_members_are_rejected(tmp_path: Path) -> None:
     manifest_fixture(tmp_path)
     (tmp_path / "data.jsonl").rename(tmp_path / "actual")

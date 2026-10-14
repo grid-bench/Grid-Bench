@@ -10,6 +10,9 @@
   unknown prediction identities.
 - Retain the eight reference simulators and configurable trajectory generator.
 - Add self-contained tests and offline reconstruction of six study summaries.
+- Reject reused generation directories and settings that produce empty or
+  duplicate instance selections.
+- Support verification of local Hugging Face downloads with cache metadata.
 - Publish original instances and measurement records separately from code;
   exclude collected model text, predicted states, and answer-bearing cases.
 - License code under MIT and original data under CC BY 4.0.

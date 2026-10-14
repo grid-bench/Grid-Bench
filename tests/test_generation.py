@@ -405,6 +405,48 @@ def _relabel_grid(values: list[int]):
     return Grid.from_state(WorldState(world, tuple(((i,), v) for i, v in enumerate(values) if v)))
 
 
+def test_generation_cannot_mix_runs_or_overwrite_existing_files(tmp_path: Path) -> None:
+    config = config_from_dict({**TINY, "families": {"metric_paint": {"w_targets": [7]}}})
+    build_dataset(config, tmp_path)
+    before = {p.relative_to(tmp_path): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    other_split = config_from_dict({**config.source, "split": "other"})
+    with pytest.raises(ValueError, match="new or empty"):
+        build_dataset(other_split, tmp_path)
+    after = {p.relative_to(tmp_path): p.read_bytes() for p in tmp_path.rglob("*") if p.is_file()}
+    assert before == after
+
+
+@pytest.mark.parametrize("updates,match", [
+    ({"split": ".."}, "directory name"),
+    ({"split": "."}, "directory name"),
+    ({"split": "../outside"}, "directory name"),
+    ({"split": "nested\\directory"}, "directory name"),
+    ({"t_grid": []}, "at least one prefix"),
+    ({"dims": [2, 2]}, "distinct positive dimensions"),
+    ({"families": ["metric_paint", "metric_paint"]}, "distinct family"),
+    ({"families": {"metric_paint": {"w_targets": [7, 7]}}}, "distinct positive integers"),
+])
+def test_configuration_rejects_unsafe_or_duplicate_selections(updates: dict, match: str) -> None:
+    with pytest.raises(ConfigError, match=match):
+        config_from_dict({**TINY, **updates})
+
+
+@pytest.mark.parametrize("indices", [[], [-1], [0, 0], [True], [0.5]])
+def test_invalid_rollout_indices_fail_before_creating_output(tmp_path: Path, indices: list) -> None:
+    out = tmp_path / "data"
+    with pytest.raises(ValueError, match="rollout indices"):
+        build_dataset(config_from_dict(TINY), out, indices=indices)
+    assert not out.exists()
+
+
+@pytest.mark.parametrize("workers", [0, -1])
+def test_invalid_worker_count_fails_before_creating_output(tmp_path: Path, workers: int) -> None:
+    out = tmp_path / "data"
+    with pytest.raises(ValueError, match="workers"):
+        build_dataset(config_from_dict(TINY), out, workers=workers)
+    assert not out.exists()
+
+
 def test_relabel_proposer_avoids_labels_that_would_merge_components() -> None:
     proposer = get_family("component_relabel").proposer
     assert proposer is not None

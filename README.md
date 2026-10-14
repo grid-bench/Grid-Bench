@@ -36,7 +36,8 @@ The Python package is `grid_bench`; the command-line tool is `grid-bench`.
 
 ## Evaluate your model
 
-Load the companion dataset and send each row's `prompt` to your model. Save
+Obtain the companion data directory using the [data guide](docs/data.md#get-the-data),
+then send each row's `prompt` to your model. Save
 one JSONL record per response:
 
 ```json
@@ -54,6 +55,7 @@ grid-bench evaluate \
 
 The default `main` view includes 1,152 instances. Use `--view workload` for
 within-family workload comparisons or `--view all` for all 1,488 instances.
+These views overlap; use `main` for comparisons with the main study.
 The evaluator writes summary metrics and per-instance scores, counting missing
 answers in the selected denominator. See the [evaluation guide](docs/evaluation.md)
 for the Python API, answer contract, and metrics.

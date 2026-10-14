@@ -54,7 +54,8 @@ def verify_manifest(root: Path) -> dict[str, Any]:
     actual = {
         path.relative_to(root).as_posix()
         for path in root.rglob("*") if path.is_file()
-        and ".git" not in path.relative_to(root).parts
+        and path.relative_to(root).parts[0] != ".git"
+        and path.relative_to(root).parts[:2] != (".cache", "huggingface")
     } - {"manifest.json"}
     if actual != set(members):
         raise ValueError("Release member inventory differs from manifest")

@@ -316,13 +316,22 @@ def build_dataset(
     full_trace: bool = False,
     progress: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
-    """Generate every selected cell and write the dataset directory; returns the manifest."""
+    """Generate selected cells into a new or empty directory; return the manifest."""
 
     out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
+    if out.exists() and (not out.is_dir() or any(out.iterdir())):
+        raise ValueError(f"output directory must be new or empty: {out}")
+    if type(workers) is not int or workers < 1:
+        raise ValueError("workers must be a positive integer")
+    if indices is not None:
+        indices = list(indices)
+        if (not indices or any(type(index) is not int or index < 0 for index in indices)
+                or len(set(indices)) != len(indices)):
+            raise ValueError("rollout indices must be nonempty, distinct nonnegative integers")
     cells = select_cells(config, families=families, dims=dims)
     if not cells:
         raise ValueError("no benchmark cells selected")
+    out.mkdir(parents=True, exist_ok=True)
     tasks = [
         (cell, config, list(indices) if indices is not None else None, full_trace) for cell in cells
     ]

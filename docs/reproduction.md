@@ -36,6 +36,11 @@ from individual measurement records. Confidence intervals are retained from
 the released trajectory bootstrap; this command does not rerun that bootstrap.
 The report records which checks and calculations were performed.
 
+Use a data directory downloaded with `snapshot_download(..., local_dir=...)`
+as shown in the [dataset guide](data.md). Local Git metadata and Hugging Face
+download metadata under `.cache/huggingface/` are ignored; released files still
+undergo checksum verification. Save generated outputs outside the data directory.
+
 ## What is reproducible from each input
 
 | Input | Check or computation |

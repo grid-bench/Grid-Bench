@@ -219,8 +219,8 @@ class FamilyConfig:
             raise ConfigError(f"unknown family {self.family!r}")
         if self.tier not in ("S", "M", "L"):
             raise ConfigError("tier must be S, M, or L")
-        if not self.dims or any(d < 1 for d in self.dims):
-            raise ConfigError("dims must list positive dimensions")
+        if not self.dims or any(d < 1 for d in self.dims) or len(set(self.dims)) != len(self.dims):
+            raise ConfigError("dims must list distinct positive dimensions")
         lo, hi = self.density
         if not 0 < lo <= hi < 1:
             raise ConfigError("density band must satisfy 0 < lo <= hi < 1")
@@ -234,8 +234,9 @@ class FamilyConfig:
             raise ConfigError(f"set_policy must be one of {SET_POLICIES}")
         if self.w_kind not in W_KINDS:
             raise ConfigError(f"w_kind must be one of {W_KINDS}")
-        if not self.w_targets or any(w <= 0 for w in self.w_targets):
-            raise ConfigError("w_targets must list positive integers")
+        if (not self.w_targets or any(w <= 0 for w in self.w_targets)
+                or len(set(self.w_targets)) != len(self.w_targets)):
+            raise ConfigError("w_targets must list distinct positive integers")
         if self.candidates < 1:
             raise ConfigError("candidates must be positive")
 
@@ -351,10 +352,13 @@ class DatasetConfig:
             raise ConfigError("name must be a non-empty string")
         if self.query_policy not in QUERY_POLICIES:
             raise ConfigError(f"query_policy must be one of {QUERY_POLICIES}")
-        if not self.split or "/" in self.split:
-            raise ConfigError("split must be a non-empty token without '/'")
+        if (not self.split or self.split in (".", "..")
+                or any(char in self.split for char in ("/", "\\", "\0"))):
+            raise ConfigError("split must be a non-empty directory name, not a path")
         if self.t_max < 1:
             raise ConfigError("t_max must be positive")
+        if not self.t_grid:
+            raise ConfigError("t_grid must contain at least one prefix length")
         if any(t < 0 or t > self.t_max for t in self.t_grid):
             raise ConfigError("every t_grid entry must lie in [0, t_max]")
         if len(set(self.t_grid)) != len(self.t_grid) or list(self.t_grid) != sorted(self.t_grid):
@@ -365,6 +369,8 @@ class DatasetConfig:
             raise ConfigError("queries must be nonnegative")
         if not self.families:
             raise ConfigError("at least one family is required")
+        if len({family.family for family in self.families}) != len(self.families):
+            raise ConfigError("families must contain distinct family ids")
 
     def to_dict(self) -> dict[str, Any]:
         return {

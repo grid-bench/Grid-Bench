@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "grid-bench"
 version = "0.6.0"
 description = "Grid-Bench: evaluating spatial state prediction under prescribed operations"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
+license-files = ["LICENSE", "LICENSE-DATA"]
 requires-python = ">=3.11"
 dependencies = []
 

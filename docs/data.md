@@ -12,6 +12,29 @@ validation splits. The planned dataset destination is
 [xzx34/Grid-Bench](https://huggingface.co/datasets/xzx34/Grid-Bench); until
 publication, use the prepared data directory locally.
 
+## Get the data
+
+Use the supplied data directory while the release is private. Once the dataset
+is published, download the complete package with Hugging Face Hub:
+
+```sh
+python -m pip install huggingface_hub
+```
+
+```python
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id="xzx34/Grid-Bench",
+    repo_type="dataset",
+    local_dir="Grid-Bench-data",
+)
+```
+
+Pass `Grid-Bench-data` to the evaluator or reproduction script. The complete
+download includes the manifest and evidence files required for reproduction.
+It contains simulator references and recorded measurements, not model answers.
+
 ## Load benchmark instances
 
 ```python
@@ -24,7 +47,7 @@ for item in benchmark:
 
 The loader also accepts `data/benchmark.jsonl` directly or an iterable of rows,
 including a Hugging Face Dataset. To load both configurations with the optional
-`datasets` library:
+`datasets` library, first install it with `python -m pip install datasets`:
 
 ```python
 from datasets import load_dataset
