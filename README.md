@@ -16,8 +16,9 @@ This is a **private prerelease repository** at
 [grid-bench/Grid-Bench](https://github.com/grid-bench/Grid-Bench). The
 [project website](https://grid-bench.github.io/) and
 [Hugging Face dataset](https://huggingface.co/datasets/xzx34/Grid-Bench) are
-confirmed destinations pending launch. A paper identifier and licenses will be
-added when confirmed. See [license status](LICENSE_STATUS.md).
+confirmed destinations pending launch. Code is licensed under [MIT](LICENSE);
+original benchmark data use [CC BY 4.0](LICENSE-DATA). The paper link will be
+added after arXiv publication. See [release scope](LICENSE_STATUS.md).
 
 Maintainer: Zixiang Xu ([xzx34](https://github.com/xzx34)). The code and dataset
 are maintained as an academic project. The `preferred-citation` entry in
@@ -71,8 +72,10 @@ python scripts/reproduce_release.py \
   --out /tmp/grid-bench-reproduced
 ```
 
-This offline command uses the released instances and answers to check scores
-and recreate the supported result tables and history-length plot. It does not
+This offline command replays the released reference instances and recreates
+the supported result tables and history-length plot from recorded measurements.
+Collected model answers are not distributed, so this command does not rescore
+them. Use the scorer with your own predictions to compute new scores. It does not
 query providers. [Reproduction instructions](docs/reproduction.md) distinguish
 answer rescoring, summary reconstruction, and the archived analysis inputs.
 

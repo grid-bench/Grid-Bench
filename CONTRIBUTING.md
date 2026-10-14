@@ -32,5 +32,5 @@ support should preserve the requested settings, delivered answer, and outcome
 identity. It must not retry a completed answer based on its score.
 
 Public issue and pull-request destinations will be added when the repository is
-published. The current tree is a local candidate; see
-[license status](LICENSE_STATUS.md) before redistribution.
+published. The current repository is private; see
+[licensing and release scope](LICENSE_STATUS.md) for the MIT code and CC BY 4.0 data.

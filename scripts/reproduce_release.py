@@ -1,4 +1,4 @@
-"""Re-score a local Grid-Bench release and reproduce its descriptive tables offline."""
+"""Replay reference states and reconstruct tables from released measurements offline."""
 
 from __future__ import annotations
 
@@ -77,11 +77,9 @@ def same_value(first: Any, second: Any) -> bool:
     return first == second
 
 
-def rescore(
-    benchmark: list[dict[str, Any]], outcomes: list[dict[str, Any]],
-    *, check_references: bool = True,
-) -> list[dict[str, Any]]:
-    """Use the official extractor/scorer, checking every released score field."""
+def reference_index(benchmark: list[dict[str, Any]], *, check_references: bool = True
+                    ) -> dict[str, tuple[dict, Instance, GoldRecord]]:
+    """Check formal prompts and optionally replay every reference world."""
     index: dict[str, tuple[dict, Instance, GoldRecord]] = {}
     for item in benchmark:
         identity = item["public_id"]
@@ -99,6 +97,16 @@ def rescore(
         if check_references and simulate(instance).final_state != gold.final_state:
             raise ValueError(f"Reference execution mismatch: {identity}")
         index[identity] = item, instance, gold
+
+    return index
+
+
+def rescore(
+    benchmark: list[dict[str, Any]], outcomes: list[dict[str, Any]],
+    *, check_references: bool = True,
+) -> list[dict[str, Any]]:
+    """Check supplied private answers with the official extractor/scorer."""
+    index = reference_index(benchmark, check_references=check_references)
 
     seen: set[tuple[str, str]] = set()
     result: list[dict[str, Any]] = []
@@ -145,6 +153,37 @@ def rescore(
     elif benchmark:
         raise ValueError("Missing outcome panel")
     return result
+
+
+def result_rows(benchmark: list[dict[str, Any]], results: list[dict[str, Any]],
+                *, check_references: bool = True) -> list[dict[str, Any]]:
+    """Join recorded measurements for aggregation, without claiming answer rescoring."""
+    index = reference_index(benchmark, check_references=check_references)
+    seen = set()
+    rows = []
+    for measured in results:
+        if {"delivered_text", "raw_text", "prediction"}.intersection(measured):
+            raise ValueError("Model answers are outside the public result schema")
+        key = measured["model_id"], measured["public_id"]
+        if key in seen or key[1] not in index:
+            raise ValueError("Duplicate result or unknown instance")
+        seen.add(key)
+        item, instance, _ = index[key[1]]
+        if measured["em"] and (not measured["valid_state"] or measured["wrong_cells"] != 0):
+            raise ValueError("Inconsistent exact-match measurement")
+        if measured["strict_em"] and not measured["em"]:
+            raise ValueError("Inconsistent strict exact-match measurement")
+        rows.append({
+            **measured, "model": key[0], "dataset": item["source_dataset"],
+            "family": instance.family, "dimension": instance.dimension, "T": instance.horizon,
+            "w": instance.to_dict()["metadata"].get("nominal_scan_workload", 0),
+            "in_main": item["in_main"], "in_workload": item["in_workload"],
+            "usage": parse_json_document(measured["usage_json"]),
+        })
+    models = {row["model"] for row in rows}
+    if (not rows and benchmark) or seen != {(m, identity) for m in models for identity in index}:
+        raise ValueError("Incomplete shared model-instance result panel")
+    return rows
 
 
 def validate_table_coverage(rows: list[dict], tables: dict[str, list[dict]]) -> None:
@@ -273,27 +312,29 @@ def main() -> None:
             parser.error("--export-cli must be separate from the input release")
     verify_manifest(data)
     benchmark = read_jsonl(data / "data/benchmark.jsonl")
-    outcomes = read_jsonl(data / "data/outcomes.jsonl")
-    if len(benchmark) != 1488 or len(outcomes) != 8928:
+    results = read_jsonl(data / "data/results.jsonl")
+    if len(benchmark) != 1488 or len(results) != 8928:
         raise ValueError("This command expects the frozen 1,488-instance, six-model release")
-    if {row["model_id"] for row in outcomes} != set(MODELS):
+    if {row["model_id"] for row in results} != set(MODELS):
         raise ValueError("Unexpected model panel")
-    rows = rescore(benchmark, outcomes)
+    rows = result_rows(benchmark, results)
     frozen = parse_json_document((data / "evidence/sources/analysis.json").read_text())
     tables = reproduce_tables(rows, frozen)
     write_tables(tables, out / "tables")
     if not args.no_plot:
-        names = {row["model_id"]: row["model_name"] for row in outcomes}
+        names = {row["model_id"]: row["model_name"] for row in results}
         draw_length_plot(tables["length"], names, out / "figures")
     if args.export_cli:
         export_cli(benchmark, args.export_cli.resolve())
     report = {
-        "format": "grid-bench-release-reproduction/1",
+        "format": "grid-bench-release-reproduction/2",
         "input_manifest_sha256": digest((data / "manifest.json").read_bytes()),
         "reference_states_reexecuted": len(benchmark),
-        "delivered_answers_rescored": len(rows),
+        "result_records_aggregated": len(rows),
+        "delivered_answers_rescored": 0,
+        "model_outputs": "Not distributed; individual scores are recorded measurements.",
         "descriptive_table_rows_checked": sum(len(part) for part in tables.values()),
-        "score_mismatches": 0,
+        "score_mismatches": None,
         "table_mismatches": 0,
         "bootstrap_intervals": "Frozen intervals retained; not rerun or independently checked.",
         "plot": None if args.no_plot else "figures/history-length.png",

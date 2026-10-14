@@ -6,10 +6,10 @@ The companion Hugging Face candidate has two configurations, each with one
 | Configuration | Rows | Meaning |
 | --- | ---: | --- |
 | `benchmark` | 1,488 | Unique grid prediction instances |
-| `outcomes` | 8,928 | Six model answers per benchmark instance |
+| `results` | 8,928 | Six recorded evaluation results per benchmark instance |
 
 Each configuration has JSONL and Parquet representations as
-`data/benchmark.{jsonl,parquet}` and `data/outcomes.{jsonl,parquet}`. JSON-string fields retain heterogeneous
+`data/benchmark.{jsonl,parquet}` and `data/results.{jsonl,parquet}`. JSON-string fields retain heterogeneous
 native objects without flattening event or state structure.
 
 ## Load a local candidate
@@ -22,8 +22,8 @@ from datasets import load_dataset
 benchmark = load_dataset(
     "/absolute/path/to/huggingface", "benchmark", split="test"
 )
-outcomes = load_dataset(
-    "/absolute/path/to/huggingface", "outcomes", split="test"
+results = load_dataset(
+    "/absolute/path/to/huggingface", "results", split="test"
 )
 print(benchmark[0]["prompt"])
 ```
@@ -34,7 +34,7 @@ are confirmed.
 
 ## Identities and views
 
-`public_id` combines `source_dataset` and `instance_id`; use it to join outcomes
+`public_id` combines `source_dataset` and `instance_id`; use it to join results
 to benchmark rows. `public_trajectory_id` combines the source dataset and native
 `rollout_id`. Native IDs and source metadata remain available independently.
 
@@ -58,9 +58,10 @@ in the current release.
 - Hash fields identify the corresponding source instance, gold, and prompt.
 
 Only `prompt` is model input in the formal interface. Reference answers,
-outcome records, and diagnostic metadata are evaluation-side information.
+result records, and diagnostic metadata are evaluation-side information.
 
-The outcome configuration preserves all six models' final delivered outcomes,
-including absent and invalid answers, with validity, scores, termination, and
-available usage fields. Model answers remain separate from provider transport
-records. See the dataset card and machine-readable schema for the full fields.
+The results configuration preserves measurements for all six models, including
+requests with absent and invalid answers: validity, scores, termination, and
+available usage fields. It excludes model text, predicted grids, answer hashes,
+and free-text parsing errors. See the dataset card and machine-readable schema
+for the full fields. The data are licensed under CC BY 4.0.

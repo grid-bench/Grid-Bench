@@ -1,8 +1,9 @@
 {
+  "example_data_license": "CC-BY-4.0",
   "excluded": [
     "Development history, private infrastructure, credentials, and transport records",
     "Manuscript prose, authoring skills, review notes, and collaboration records",
-    "Frozen datasets and collected model answers (separate Hugging Face candidate)",
+    "Benchmark and result measurements (separate dataset); collected answers are private",
     "Export-builder tests whose workspace-only builders are not shipped"
   ],
   "files": {
@@ -22,33 +23,43 @@
       "source": ".python-version"
     },
     "CHANGELOG.md": {
-      "bytes": 661,
-      "sha256": "c93a1030c3b1b279cfd4313689c1adb26e8a13febd82d8f653483d661f4243a2",
+      "bytes": 902,
+      "sha256": "9d9a816e6df77fc7f8fcce2526567fed7bf9424c578a47795e68e1b77dc101ee",
       "source": "release/templates/code/CHANGELOG.md"
     },
     "CITATION.cff": {
-      "bytes": 1724,
-      "sha256": "a2c6bee108f183c3374845a430e65a12c521256923f2f2125094519827a5e35b",
+      "bytes": 1737,
+      "sha256": "761d3f0adb3c8e4c99b099f80187c98e6c27454ff00803252efc6a4c61841078",
       "source": "release/templates/code/CITATION.cff"
     },
     "CONTRIBUTING.md": {
-      "bytes": 1492,
-      "sha256": "fb0dbca8240c9d81d1ff276e316fff985d241790bbfe473c69be8eebe2b460ff",
+      "bytes": 1515,
+      "sha256": "d57e44df386cebaa23a61c4bdc4cc6ec2792730305b9f014a470d2004577bfc7",
       "source": "release/templates/code/CONTRIBUTING.md"
     },
+    "LICENSE": {
+      "bytes": 1080,
+      "sha256": "3fdd20898e33dbc497f906368cda2020a15c6f0e5bc66db952b11fcd8ee5d9a5",
+      "source": "release/templates/code/LICENSE"
+    },
+    "LICENSE-DATA": {
+      "bytes": 17023,
+      "sha256": "d557539df68e771cc1eedcc91d13f70fca930e508d11eedcafa4b15db49e3744",
+      "source": "release/templates/code/LICENSE-DATA"
+    },
     "LICENSE_STATUS.md": {
-      "bytes": 740,
-      "sha256": "52257074817e2be016f31ccf3d29a4412276eeb2b431d64f2188375f3208f6ac",
+      "bytes": 1054,
+      "sha256": "e78363a9cf4f8debd8aa739b722f62b8862977bf5f6e790e5645c8a8646bdad0",
       "source": "release/templates/code/LICENSE_STATUS.md"
     },
     "MANIFEST.in": {
-      "bytes": 421,
-      "sha256": "380e4165582cae368719f32d1719542b5783b81db6d65897347b2efab41c9611",
+      "bytes": 442,
+      "sha256": "1fa09c33f4cd55e608ca4782d142e94948d456a3b29bf18fbb9d2abb7fcde8d1",
       "source": "release/templates/code/MANIFEST.in"
     },
     "README.md": {
-      "bytes": 5347,
-      "sha256": "f2fc619dcb68cb7f6f30401b2466f3375f984dc14c2273ccdcb550126f5d3d13",
+      "bytes": 5593,
+      "sha256": "1531a79f3185e55d81f70b55983e639e2975e6f275c912d771a52765f19fd024",
       "source": "release/templates/code/README.md"
     },
     "configs/calib3.json": {
@@ -137,8 +148,8 @@
       "source": "release/templates/code/docs/TASKS.md"
     },
     "docs/data.md": {
-      "bytes": 2815,
-      "sha256": "b2d87f4937f15a3aa03f57f2def0322e034758ae9380cbc84259adf682baa56f",
+      "bytes": 2885,
+      "sha256": "c74f71a2b5140cab9a0587f9e79af6b5f914070fb72432a9da4ea538c5c003c1",
       "source": "release/templates/code/docs/data.md"
     },
     "docs/evaluation.md": {
@@ -147,8 +158,8 @@
       "source": "release/templates/code/docs/evaluation.md"
     },
     "docs/reproduction.md": {
-      "bytes": 4108,
-      "sha256": "cdab764d3b2796032ca046bf9559fc53bc8f3ffc0d8e4e14608e919e3f1352a5",
+      "bytes": 4226,
+      "sha256": "f19d7d68c46ff14643d57156e68eaeb91aba4b692a6dbd6ff61d2c132d8c0beb",
       "source": "release/templates/code/docs/reproduction.md"
     },
     "docs/task-and-format.md": {
@@ -227,8 +238,8 @@
       "source": "paper/technical-examples.json"
     },
     "pyproject.toml": {
-      "bytes": 1205,
-      "sha256": "7930887adab3cdafe9760890b1a6f469ffaaa0652402591ceaccf2bd91c68421",
+      "bytes": 1230,
+      "sha256": "32931b80633f3d36d9803da93c4937c4241693a0ee417d02209ea3d270ec1b3d",
       "source": "pyproject.toml"
     },
     "scripts/analyze_completed.py": {
@@ -257,8 +268,8 @@
       "source": "scripts/regen.sh"
     },
     "scripts/reproduce_release.py": {
-      "bytes": 14943,
-      "sha256": "26a991881024b998eeb127bdf7c6305d4695e2f75533cec9b879f66ac3f5d0e9",
+      "bytes": 17132,
+      "sha256": "7e4edb3b378a4654893c6b8edb98faa1a219b161e477124ea6b69e696efb6570",
       "source": "scripts/reproduce_release.py"
     },
     "scripts/verify_formal.py": {
@@ -612,8 +623,8 @@
       "source": "tests/test_registry.py"
     },
     "tests/test_release_reproduction.py": {
-      "bytes": 7749,
-      "sha256": "f41ea8ac5ea02a6b3a41d8b24524986e467d41eea9113c57a508c8157e4cb160",
+      "bytes": 9157,
+      "sha256": "f74727b87e2d923a152b39d46d275516c142098fcf7a339ea5dab304647774f3",
       "source": "tests/test_release_reproduction.py"
     },
     "tests/test_schema.py": {
@@ -658,7 +669,7 @@
     }
   },
   "format": "grid-bench-public-source/1",
-  "license_status": "Pending author selection; see LICENSE_STATUS.md.",
+  "license": "MIT",
   "negative_credential_test_fixtures": [
     {
       "kind": "url_credentials",

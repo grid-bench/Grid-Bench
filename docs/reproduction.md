@@ -1,7 +1,7 @@
 # Reproducing the release
 
 The code candidate and data candidate form one release. Keep their manifests
-together so a result can be traced to the same instances, prompts, outcomes, and
+together so a result can be traced to the same instances, prompts, measurements, and
 analysis snapshot.
 
 ## Offline verification and result reconstruction
@@ -15,9 +15,10 @@ python scripts/reproduce_release.py \
   --out /tmp/grid-bench-reproduced
 ```
 
-The helper reads the frozen inputs and delivered answers, checks reference
-execution and scoring, and writes supported summaries and a history-length
-figure to the output directory. It does not generate new model results.
+The helper reads the frozen inputs and recorded measurements, checks reference
+execution, and writes supported summaries and a history-length figure to the
+output directory. Collected model answers are not distributed; their original
+scores are not independently recomputed by this public workflow. It does not generate new model results.
 Its output report records the exact checks completed and files produced.
 
 Outputs include `validation.json`, six CSV tables under `tables/` (`overview`,
@@ -30,16 +31,16 @@ The main history-length comparison uses 1,152 instances per model. The separate
 workload view reuses 192 of these and includes 336 additional instances; it
 contains 528 unique instances, not an extra 528 questions in the benchmark.
 
-## Three reproduction levels
+## Supported reproduction workflows
 
 | Operation | Inputs | Result |
 | --- | --- | --- |
 | Execute references and score a new model | Instances, simulator, scorer, and new answers | Independently computed target states and scores |
-| Re-extract and rescore the collected answers | References, delivered text, and frozen scoring/extraction settings | A check of all released outcome scores |
-| Rebuild the selected result summaries and plots | Outcome scores and frozen analysis/diagnostic evidence | The supported aggregate tables and assets |
+| Check the reference instances | Instances, prompts, and simulator reference states | Prompt and reference-execution checks |
+| Rebuild the selected result summaries and plots | Recorded scores and frozen analysis/diagnostic evidence | The supported aggregate tables and assets |
 
-Archived analysis and diagnostic snapshots preserve the complete reported
-statistics. Reusing those files does not rerun their original bootstrap or
+Analysis and diagnostic exports preserve reported statistics while excluding
+answer-bearing failure cases. Reusing those files does not rerun their original bootstrap or
 reconstruct provider requests. The portable helper states which values it
 recomputes and which intervals or diagnostics it reads from frozen evidence.
 The original campaign-ledger verification tools require the original collection

@@ -13,6 +13,7 @@ from scripts.reproduce_release import (
     digest,
     reproduce_tables,
     rescore,
+    result_rows,
     validate_table_coverage,
     verify_manifest,
 )
@@ -182,3 +183,32 @@ def test_missing_or_duplicated_conditions_are_rejected() -> None:
     tables["task_length"].append(tables["task_length"][0])
     with pytest.raises(ValueError, match="Missing or duplicate"):
         validate_table_coverage(rows, tables)
+
+
+
+def test_public_metrics_rebuild_statistics_without_model_answers() -> None:
+    from scripts.analyze_completed import group_stats
+
+    benchmark, private = fixture_panel()
+    measurements = [{k: v for k, v in row.items()
+                     if k not in {"delivered_text", "delivered_text_sha256", "score_error",
+                                  "protocol_violation"}} for row in private]
+    joined = result_rows(benchmark, measurements)
+    assert group_stats(joined) == group_stats(rescore(benchmark, private))
+    assert all("delivered_text" not in row for row in joined)
+    with pytest.raises(ValueError, match="Duplicate result"):
+        result_rows(benchmark, measurements + [measurements[0]])
+    with pytest.raises(ValueError, match="Incomplete shared"):
+        result_rows(benchmark, [])
+    with pytest.raises(ValueError, match="outside the public"):
+        result_rows(benchmark, private)
+
+
+def test_public_results_reject_inconsistent_exactness() -> None:
+    benchmark, private = fixture_panel()
+    measurements = [{k: v for k, v in row.items()
+                     if k not in {"delivered_text", "delivered_text_sha256", "score_error",
+                                  "protocol_violation"}} for row in private]
+    measurements[0]["wrong_cells"] = 8
+    with pytest.raises(ValueError, match="Inconsistent exact-match"):
+        result_rows(benchmark, measurements)

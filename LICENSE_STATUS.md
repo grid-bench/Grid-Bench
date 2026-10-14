@@ -1,14 +1,19 @@
-# License status
+# Licensing and release scope
 
-This directory is a local release candidate. No new public license is granted
-by this file, the candidate packaging, or its citation metadata.
+Copyright (c) 2026 Grid-Bench contributors.
 
-The proposed choice is MIT for original source code and CC BY 4.0 for original
-synthetic benchmark data and documentation. Copyright holders, scope, and final
-license text must be confirmed before public release. Do not treat these
-proposals as permissions already granted.
+The original source code and its usage documentation are licensed under the
+[MIT License](LICENSE). Original synthetic examples in `examples/*.json` and
+`paper/*examples.json` are licensed under [CC BY 4.0](LICENSE-DATA), as are the
+original benchmark instances, prompts, simulator reference answers, and research
+data in the companion dataset. Attribute those data to Grid-Bench contributors
+and link the dataset and license; indicate modifications.
 
-Third-party dependencies retain their own licenses. Model-generated answers,
-third-party assets, and paper-template materials are not automatically covered
-by the proposed source-code or synthetic-data license. The outcome export is
-prepared locally; its redistribution terms remain a release decision.
+Collected model answers are not distributed. The companion dataset contains
+recorded measurements and aggregate statistics, without answer text, predicted
+states, or answer-bearing failure cases. Local research archives are outside
+this release. Third-party dependencies retain their own licenses.
+
+The full paper author list is retained separately in `preferred-citation` in
+[CITATION.cff](CITATION.cff). The paper link will be added after arXiv publication.
+The repository remains private until public launch is authorized.
