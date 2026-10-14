@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-10-14
 
 - Establish Grid-Bench as an independently maintained package with the
   `grid-bench` distribution and CLI, and the `grid_bench` Python namespace.

@@ -8,14 +8,12 @@ The companion data package has two configurations, each with one `test` split:
 | `results` | 8,928 | Recorded evaluation measurements for six models |
 
 Both are supplied as JSONL and Parquet under `data/`. There are no training or
-validation splits. The planned dataset destination is
-[xzx34/Grid-Bench](https://huggingface.co/datasets/xzx34/Grid-Bench); until
-publication, use the prepared data directory locally.
+validation splits. Download the dataset from
+[xzx34/Grid-Bench](https://huggingface.co/datasets/xzx34/Grid-Bench).
 
 ## Get the data
 
-Use the supplied data directory while the release is private. Once the dataset
-is published, download the complete package with Hugging Face Hub:
+Download the complete package with Hugging Face Hub:
 
 ```sh
 python -m pip install huggingface_hub
@@ -52,8 +50,8 @@ including a Hugging Face Dataset. To load both configurations with the optional
 ```python
 from datasets import load_dataset
 
-benchmark = load_dataset("/path/to/Grid-Bench-data", "benchmark", split="test")
-results = load_dataset("/path/to/Grid-Bench-data", "results", split="test")
+benchmark = load_dataset("xzx34/Grid-Bench", "benchmark", split="test")
+results = load_dataset("xzx34/Grid-Bench", "results", split="test")
 ```
 
 ## Views and sample units

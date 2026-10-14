@@ -105,10 +105,9 @@ configurations, sample units, and provenance. Code is licensed under
 [CITATION.cff](CITATION.cff) contains the paper citation and software metadata.
 Maintainer: Zixiang Xu ([xzx34](https://github.com/xzx34)).
 
-The repository is currently private. The planned
-[project website](https://grid-bench.github.io/) and
-[Hugging Face dataset](https://huggingface.co/datasets/xzx34/Grid-Bench) will
-be linked at launch; the paper URL will follow its arXiv publication.
+Explore the [project website](https://grid-bench.github.io/) and download the
+[Hugging Face dataset](https://huggingface.co/datasets/xzx34/Grid-Bench).
+The paper URL will be added after arXiv publication.
 
 ## Development
 
