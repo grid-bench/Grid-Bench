@@ -1,0 +1,41 @@
+{
+  "schema_version": "spatial-worlds/0.2",
+  "id": "metric-paint-example",
+  "family": "metric_paint",
+  "world": {
+    "shape": [3, 3],
+    "values": [0, 1, 2, 3]
+  },
+  "initial": {
+    "cells": [
+      [[0, 0], 1],
+      [[0, 1], 1],
+      [[1, 1], 2],
+      [[2, 2], 3]
+    ]
+  },
+  "events": [
+    {
+      "op": "PAINT",
+      "a": [0, 0],
+      "r": 1,
+      "u": 1,
+      "v": 2
+    },
+    {
+      "op": "SET",
+      "p": [2, 0],
+      "v": 1
+    },
+    {
+      "op": "PAINT",
+      "a": [1, 0],
+      "r": 1,
+      "u": 2,
+      "v": 3
+    }
+  ],
+  "metadata": {
+    "purpose": "format and prompt-rendering example"
+  }
+}

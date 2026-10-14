@@ -1,0 +1,22 @@
+{
+  "name": "smoke",
+  "dataset_seed": 20260903,
+  "split": "dev",
+  "tier": "S",
+  "dims": [
+    1,
+    2,
+    3
+  ],
+  "t_grid": [
+    0,
+    1,
+    2,
+    4,
+    8,
+    16,
+    32
+  ],
+  "t_max": 32,
+  "seeds_per_cell": 3
+}

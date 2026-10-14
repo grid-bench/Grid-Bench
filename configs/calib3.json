@@ -1,0 +1,77 @@
+{
+  "name": "calib3",
+  "description": "Selected-level calibration dataset: M tier (N approximately 256), d in 1..5, one workload level per family, two rollouts per feasible cell, generator 0.5. STENCIL support target 10 with tolerance 0.3, MIX support 12, MOVE scan 30, RELABEL scan 100. Realized supports and scans are recorded, not exactly matched. See docs/CALIBRATION.md.",
+  "dataset_seed": 20260906,
+  "split": "calib3",
+  "tier": "M",
+  "dims": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "t_grid": [
+    0,
+    1,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "t_max": 128,
+  "seeds_per_cell": 2,
+  "families": {
+    "metric_paint": {
+      "w_targets": [
+        100
+      ]
+    },
+    "box_reflection": {
+      "w_targets": [
+        64
+      ]
+    },
+    "local_stencil": {
+      "w_targets": [
+        10
+      ],
+      "tolerance": 0.3
+    },
+    "occluded_mix": {
+      "w_targets": [
+        12
+      ]
+    },
+    "component_relabel": {
+      "w_targets": [
+        100
+      ],
+      "values": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "boundary_layer": {
+      "w_targets": [
+        60
+      ]
+    },
+    "obstructed_motion": {
+      "w_targets": [
+        30
+      ]
+    },
+    "aggregating_compression": {
+      "w_targets": [
+        256
+      ]
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": "spatial-worlds/0.2",
+  "instance_id": "metric-paint-example",
+  "family": "metric_paint",
+  "world": {
+    "shape": [
+      3,
+      3
+    ],
+    "values": [
+      0,
+      1,
+      2,
+      3
+    ]
+  },
+  "final_state": {
+    "cells": [
+      [
+        [
+          0,
+          0
+        ],
+        3
+      ],
+      [
+        [
+          0,
+          1
+        ],
+        2
+      ],
+      [
+        [
+          1,
+          1
+        ],
+        3
+      ],
+      [
+        [
+          2,
+          0
+        ],
+        1
+      ],
+      [
+        [
+          2,
+          2
+        ],
+        3
+      ]
+    ]
+  },
+  "workloads": [
+    {
+      "scan": 3,
+      "effect": 2
+    },
+    {
+      "scan": 1,
+      "effect": 1
+    },
+    {
+      "scan": 4,
+      "effect": 2
+    }
+  ]
+}

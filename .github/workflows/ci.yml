@@ -1,0 +1,44 @@
+name: Offline checks
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.11", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install test and build dependencies
+        run: python -m pip install -e '.[dev,plots,eval]' build
+      - name: Core tests without the research archive
+        run: python -m pytest tests
+      - name: Check source style and typing
+        run: |
+          ruff check src tests
+          pyright --pythonpath "$(python -c 'import sys; print(sys.executable)')" src tests
+      - name: Small credential-free example
+        run: python scripts/quickstart.py
+      - name: Offline end-to-end CLI
+        run: |
+          spatial-worlds generate --config examples/quickstart-config.json --out "$RUNNER_TEMP/grid-bench-demo"
+          spatial-worlds run --data "$RUNNER_TEMP/grid-bench-demo" --provider oracle --out "$RUNNER_TEMP/grid-bench-oracle.jsonl"
+          spatial-worlds evaluate --data "$RUNNER_TEMP/grid-bench-demo" --predictions "$RUNNER_TEMP/grid-bench-oracle.jsonl" --out "$RUNNER_TEMP/grid-bench-scores" --bootstrap 10
+      - name: Build source and wheel distributions
+        run: python -m build
+      - name: Verify wheel away from source checkout
+        run: |
+          python -m venv "$RUNNER_TEMP/grid-bench-installed"
+          "$RUNNER_TEMP/grid-bench-installed/bin/python" -m pip install dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/grid-bench-installed/bin/spatial-worlds" families --json
+          "$RUNNER_TEMP/grid-bench-installed/bin/python" -c 'from spatial_worlds.generation import PRESETS, config_from_dict; assert config_from_dict(PRESETS["smoke"]).name == "smoke"'

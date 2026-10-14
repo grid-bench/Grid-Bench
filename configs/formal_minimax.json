@@ -1,0 +1,56 @@
+{
+  "campaign_id": "formal-128k-native-minimax-01",
+  "collection_protocol": "spatial-worlds-evaluation/2.2",
+  "evaluation_protocol": "spatial-worlds-evaluation/1.6",
+  "scoring_version": "spatial-worlds-scoring/1.0",
+  "prompt_version": "spatial-worlds-prompt/0.4",
+  "resources": {
+    "max_tokens": 128000,
+    "deadline_s": 7200,
+    "usage_grace_s": 5,
+    "technical_attempts_per_run": 3
+  },
+  "dispatch": {
+    "initial_per_model_concurrency": 4,
+    "initial_total_concurrency": 4,
+    "promotion_outcomes_per_model": 8,
+    "promoted_per_model_concurrency": 8,
+    "promoted_total_concurrency": 8,
+    "account_refresh_s": 300
+  },
+  "credit_buffer_usd": 95,
+  "formal_budget_usd": 150,
+  "metadata_refresh_s": 7200,
+  "parent_binding_sha256": "e650e3fdcbc070875f61e7206e6882a90539f366d37f14b3f2a79909da1fcc2a",
+  "lineage": [],
+  "models": [
+    {
+      "id": "minimax.minimax-m2.5",
+      "provider": "bedrock",
+      "route": "bedrock",
+      "effort": "native_always_on",
+      "accepted_response_models": ["minimax.minimax-m2.5"],
+      "max_input_tokens": 200704,
+      "input_per_million": 0.3,
+      "output_per_million": 1.2
+    }
+  ],
+  "pilot": {
+    "concurrency": 1,
+    "jobs": [
+      {"model": "minimax.minimax-m2.5", "dataset": "main", "instance_id": "component_relabel/M/d3/w100/test/0003/t000"},
+      {"model": "minimax.minimax-m2.5", "dataset": "main", "instance_id": "boundary_layer/M/d4/w60/test/0003/t001"},
+      {"model": "minimax.minimax-m2.5", "dataset": "main", "instance_id": "metric_paint/M/d3/w100/test/0003/t008"},
+      {"model": "minimax.minimax-m2.5", "dataset": "main", "instance_id": "box_reflection/M/d2/w64/test/0003/t064"}
+    ]
+  },
+  "routes": {
+    "bedrock": {
+      "region": "us-east-1",
+      "bearer_token_env": "AWS_BEARER_TOKEN_BEDROCK",
+      "monthly_spend_stop_usd": 500,
+      "known_prior_spend_usd": 141.0,
+      "budget_reset_at": "2026-10-01T00:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,583 @@
+{
+  "description": "Illustrative MOVE histories for the accepted Figure 1. These are not evaluation instances or observed model outputs. States are hand-specified sparse coordinate-value lists; omitted cells are zero.",
+  "examples": [
+    {
+      "id": "figure1-move-2d",
+      "family": "obstructed_motion",
+      "shape": [
+        4,
+        4
+      ],
+      "coordinate_order": [
+        "row",
+        "column"
+      ],
+      "initial": [
+        [
+          [
+            0,
+            2
+          ],
+          2
+        ],
+        [
+          [
+            0,
+            3
+          ],
+          2
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          2
+        ],
+        [
+          [
+            2,
+            3
+          ],
+          2
+        ],
+        [
+          [
+            3,
+            0
+          ],
+          1
+        ],
+        [
+          [
+            3,
+            3
+          ],
+          2
+        ]
+      ],
+      "events": [
+        {
+          "op": "MOVE",
+          "v": 1,
+          "axis": 1,
+          "direction": 1,
+          "k": 1
+        },
+        {
+          "op": "SET",
+          "p": [
+            1,
+            1
+          ],
+          "v": 2
+        },
+        {
+          "op": "MOVE",
+          "v": 1,
+          "axis": 0,
+          "direction": -1,
+          "k": 2
+        }
+      ],
+      "expected_states": [
+        [
+          [
+            [
+              0,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              0,
+              3
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              3
+            ],
+            2
+          ],
+          [
+            [
+              3,
+              1
+            ],
+            1
+          ],
+          [
+            [
+              3,
+              3
+            ],
+            2
+          ]
+        ],
+        [
+          [
+            [
+              0,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              0,
+              3
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              3
+            ],
+            2
+          ],
+          [
+            [
+              3,
+              1
+            ],
+            1
+          ],
+          [
+            [
+              3,
+              3
+            ],
+            2
+          ]
+        ],
+        [
+          [
+            [
+              0,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              0,
+              3
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              1
+            ],
+            1
+          ],
+          [
+            [
+              2,
+              3
+            ],
+            2
+          ],
+          [
+            [
+              3,
+              3
+            ],
+            2
+          ]
+        ]
+      ],
+      "expected_blue_positions": [
+        [
+          3,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "diagnostic": {
+        "coordinate": [
+          3,
+          0
+        ],
+        "predicted_value": 1,
+        "expected_reference_value": 0,
+        "expected_kind": "changed-cell",
+        "description": "The initial position was not cleared. All other cells equal the reference."
+      }
+    },
+    {
+      "id": "figure1-move-3d",
+      "family": "obstructed_motion",
+      "shape": [
+        3,
+        3,
+        3
+      ],
+      "coordinate_order": [
+        "x",
+        "y",
+        "z"
+      ],
+      "initial": [
+        [
+          [
+            0,
+            0,
+            2
+          ],
+          2
+        ],
+        [
+          [
+            0,
+            1,
+            0
+          ],
+          1
+        ],
+        [
+          [
+            0,
+            2,
+            1
+          ],
+          2
+        ],
+        [
+          [
+            2,
+            0,
+            0
+          ],
+          2
+        ],
+        [
+          [
+            2,
+            0,
+            1
+          ],
+          2
+        ],
+        [
+          [
+            2,
+            2,
+            0
+          ],
+          2
+        ],
+        [
+          [
+            2,
+            2,
+            2
+          ],
+          2
+        ]
+      ],
+      "events": [
+        {
+          "op": "MOVE",
+          "v": 1,
+          "axis": 0,
+          "direction": 1,
+          "k": 1
+        },
+        {
+          "op": "SET",
+          "p": [
+            1,
+            1,
+            2
+          ],
+          "v": 2
+        },
+        {
+          "op": "MOVE",
+          "v": 1,
+          "axis": 2,
+          "direction": 1,
+          "k": 2
+        }
+      ],
+      "expected_states": [
+        [
+          [
+            [
+              0,
+              0,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              0,
+              2,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              1,
+              0
+            ],
+            1
+          ],
+          [
+            [
+              2,
+              0,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              0,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              2,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              2,
+              2
+            ],
+            2
+          ]
+        ],
+        [
+          [
+            [
+              0,
+              0,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              0,
+              2,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              1,
+              0
+            ],
+            1
+          ],
+          [
+            [
+              1,
+              1,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              0,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              0,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              2,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              2,
+              2
+            ],
+            2
+          ]
+        ],
+        [
+          [
+            [
+              0,
+              0,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              0,
+              2,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              1,
+              1,
+              1
+            ],
+            1
+          ],
+          [
+            [
+              1,
+              1,
+              2
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              0,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              0,
+              1
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              2,
+              0
+            ],
+            2
+          ],
+          [
+            [
+              2,
+              2,
+              2
+            ],
+            2
+          ]
+        ]
+      ],
+      "expected_blue_positions": [
+        [
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1
+        ]
+      ],
+      "diagnostic": {
+        "coordinate": [
+          2,
+          0,
+          0
+        ],
+        "predicted_value": 0,
+        "expected_reference_value": 2,
+        "expected_kind": "unchanged-cell",
+        "description": "An existing occupied cell was incorrectly cleared. All other cells equal the reference."
+      }
+    }
+  ]
+}

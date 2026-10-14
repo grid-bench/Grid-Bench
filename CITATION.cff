@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+message: "Please cite the accompanying paper in preferred-citation when using Grid-Bench. Publication identifiers will be added when verified."
+type: software
+repository-code: "https://github.com/grid-bench/Grid-Bench"
+title: "Grid-Bench"
+abstract: >-
+  Grid-Bench evaluates complete spatial state prediction from an initial grid,
+  explicit rules, and an event history. Eight operation families cover two-,
+  three-, and four-dimensional grids, with executable reference states and
+  cell-level error analysis.
+authors:
+  - name: Grid-Bench contributors
+contact:
+  - family-names: Xu
+    given-names: Zixiang
+    alias: xzx34
+preferred-citation:
+  type: generic
+  title: "Grid-Bench: Can LLMs Predict How Discrete Worlds Change?"
+  authors:
+    - family-names: Xu
+      given-names: Zixiang
+    - family-names: Song
+      given-names: Zirui
+    - family-names: Zheng
+      given-names: Wanrong
+    - family-names: Zhang
+      given-names: Chiyu
+    - family-names: Huang
+      given-names: Yue
+    - family-names: Peng
+      given-names: Yuyang
+    - family-names: Zhang
+      given-names: Kexin
+    - family-names: Chen
+      given-names: Jinkun
+    - family-names: Chen
+      given-names: Xiuying
+    - family-names: Zhang
+      given-names: Xiangliang
+    - family-names: Liu
+      given-names: Yan
+    - family-names: Itti
+      given-names: Laurent
+    - family-names: Shyu
+      given-names: Frank
+    - family-names: Luo
+      given-names: Xiaoqiang
+    - family-names: Pandey
+      given-names: Sandeep
+    - family-names: Liu
+      given-names: Xi
+    - family-names: Simon
+      given-names: Luke
+    - family-names: Hu
+      given-names: Xiyang
+    - family-names: Zhao
+      given-names: Yue

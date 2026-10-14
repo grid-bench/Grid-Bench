@@ -1,0 +1,50 @@
+{
+  "name": "rq2",
+  "description": "Workload study dataset at d = 2 (M tier), retaining the stable name rq2: workload levels of four families with the same seed and split as configs/main.json, so middle-level cells and predictions are shared. The first pass uses T <= 64 and rollouts 0..3; T = 128 and further rollouts remain available as supplementary data. See docs/EXPERIMENTS.md.",
+  "dataset_seed": 20260907,
+  "split": "test",
+  "tier": "M",
+  "dims": [
+    2
+  ],
+  "t_grid": [
+    0,
+    1,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "t_max": 128,
+  "seeds_per_cell": 8,
+  "families": {
+    "metric_paint": {
+      "w_targets": [
+        25,
+        100
+      ]
+    },
+    "box_reflection": {
+      "w_targets": [
+        16,
+        64,
+        256
+      ]
+    },
+    "boundary_layer": {
+      "w_targets": [
+        15,
+        60,
+        150
+      ]
+    },
+    "occluded_mix": {
+      "w_targets": [
+        6,
+        12,
+        30
+      ]
+    }
+  }
+}

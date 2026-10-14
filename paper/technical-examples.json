@@ -1,0 +1,53 @@
+{
+  "description": "Hand-calculated 2D rule illustrations, not formal evaluation instances. Coordinates are [row,column]; literal outputs and read counts are checked by two executors.",
+  "examples": [
+    {
+      "id": "technical-relabel-2d", "family": "component_relabel", "title": "RELABEL: connected, not same-valued everywhere",
+      "world": {"shape": [3,4], "values": [0,1,2,3]},
+      "initial": [[1,0,1,2],[1,1,0,2],[0,2,1,0]],
+      "event": {"op":"RELABEL","p":[0,0],"v":3},
+      "expected": [[3,0,1,2],[3,3,0,2],[0,2,1,0]],
+      "scan": 7, "effect": 3,
+      "selected": [[0,0],[1,0],[1,1]],
+      "read_only": [[0,1],[2,0],[1,2],[2,1]],
+      "annotation": "p=[0,0], v=3; disconnected 1s stay 1",
+      "manual_check": "The equal-valued component has three cells and four unique external boundary cells. Only that component is recolored."
+    },
+    {
+      "id": "technical-layer-2d", "family": "boundary_layer", "title": "LAYER: one simultaneous empty boundary",
+      "world": {"shape": [3,4], "values": [0,1,2,3]},
+      "initial": [[0,0,2,0],[0,1,1,2],[0,1,0,0]],
+      "event": {"op":"LAYER","p":[1,1],"s":1},
+      "expected": [[0,1,2,0],[1,1,1,2],[1,1,1,0]],
+      "scan": 9, "effect": 4,
+      "selected": [[0,1],[1,0],[2,0],[2,2]],
+      "read_only": [[1,1],[1,2],[2,1],[0,2],[1,3]],
+      "annotation": "p=[1,1], s=+1; new cells do not regrow",
+      "manual_check": "The component has three cells. Its unique external boundary has six cells: four zeros to fill and two 2s to preserve."
+    },
+    {
+      "id": "technical-stencil-2d", "family": "local_stencil", "title": "STENCIL: read beyond the update ball",
+      "world": {"shape": [3,4], "values": [0,1,2,3]},
+      "initial": [[1,0,2,0],[0,1,2,3],[0,2,0,1]],
+      "event": {"op":"STENCIL","a":[1,1],"r":1},
+      "expected": [[1,0,2,0],[2,1,0,3],[0,3,0,1]],
+      "scan": 22, "effect": 3,
+      "selected": [[0,1],[1,0],[1,1],[1,2],[2,1]],
+      "read_only": [[0,0],[0,2],[1,3],[2,0],[2,2]],
+      "annotation": "a=[1,1], r=1; all sums read old values",
+      "manual_check": "Sums on support in row order are 4,2,5,8,3; modulo 4 they are 0,2,1,0,3. Five support cells read 22 incidences over 10 unique coordinates."
+    },
+    {
+      "id": "technical-move-2d", "family": "obstructed_motion", "title": "MOVE: front-to-back motion with obstacles",
+      "world": {"shape": [3,5], "values": [0,1,2,3]},
+      "initial": [[1,1,0,2,0],[0,1,0,0,2],[2,0,1,0,0]],
+      "event": {"op":"MOVE","v":1,"axis":1,"direction":1,"k":3},
+      "expected": [[0,1,1,2,0],[0,0,0,1,2],[2,0,0,0,1]],
+      "scan": 13, "effect": 6,
+      "selected": [[0,0],[0,1],[0,2],[1,1],[1,2],[1,3],[2,2],[2,3],[2,4]],
+      "read_only": [[0,3],[1,4]],
+      "annotation": "v=1, axis=1, direction=+1, k=3",
+      "manual_check": "Row 0 has two entities and four checks; row 1 one entity and three checks; row 2 one entity and two checks. Row 0 column 1 is both an origin and destination and remains 1 in the final state. Transit cells [1,2] and [2,3] are written and later cleared, so both belong to write support despite beginning and ending at zero. Only the two encountered blockers [0,3] and [1,4] are read-only."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "quickstart",
+  "description": "One small demonstration trajectory; not part of the formal test set.",
+  "dataset_seed": 7,
+  "split": "demo",
+  "tier": "S",
+  "dims": [2],
+  "t_grid": [0, 1, 2],
+  "t_max": 2,
+  "seeds_per_cell": 1,
+  "families": {"metric_paint": {"w_targets": [7]}}
+}

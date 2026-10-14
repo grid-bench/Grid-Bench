@@ -1,0 +1,30 @@
+{
+  "unit": "USD per million tokens",
+  "source": "NAIRR /model/info price metadata read 2026-09-11. USD per million tokens; a dated gateway quote, not official-vendor pricing or a billing reconciliation. Current six-model NAIRR panel only; previous price table preserved locally under data/study-v1/history/v1.0/prices.json.",
+  "usd_per_million": {
+    "gpt-5.6-sol": {
+      "input": 5,
+      "output": 30
+    },
+    "gpt-5.4-mini": {
+      "input": 0.75,
+      "output": 4.5
+    },
+    "claude-opus-5": {
+      "input": 5,
+      "output": 25
+    },
+    "claude-sonnet": {
+      "input": 2,
+      "output": 10
+    },
+    "gemini-3.1-pro": {
+      "input": 2,
+      "output": 12
+    },
+    "gemini-3.8-flash": {
+      "input": 0.75,
+      "output": 3.75
+    }
+  }
+}

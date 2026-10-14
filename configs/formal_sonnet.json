@@ -1,0 +1,62 @@
+{
+  "campaign_id": "formal-128k-high-sonnet-01",
+  "collection_protocol": "spatial-worlds-evaluation/1.9",
+  "evaluation_protocol": "spatial-worlds-evaluation/1.6",
+  "scoring_version": "spatial-worlds-scoring/1.0",
+  "prompt_version": "spatial-worlds-prompt/0.4",
+  "resources": {
+    "max_tokens": 128000,
+    "deadline_s": 7200,
+    "usage_grace_s": 5,
+    "technical_attempts_per_run": 3
+  },
+  "dispatch": {
+    "initial_per_model_concurrency": 4,
+    "initial_total_concurrency": 4,
+    "promotion_outcomes_per_model": 8,
+    "promoted_per_model_concurrency": 8,
+    "promoted_total_concurrency": 8,
+    "account_refresh_s": 300
+  },
+  "credit_buffer_usd": 25,
+  "formal_budget_usd": 800,
+  "metadata_refresh_s": 7200,
+  "allow_http_endpoint": true,
+  "parent_binding_sha256": "e650e3fdcbc070875f61e7206e6882a90539f366d37f14b3f2a79909da1fcc2a",
+  "lineage": [],
+  "models": [
+    {
+      "id": "claude-sonnet",
+      "provider": "openai",
+      "route": "gateway",
+      "effort": "high",
+      "expected_upstream_model": "vertex_ai/claude-sonnet-5",
+      "accepted_response_models": [
+        "claude-sonnet",
+        "claude-sonnet-5",
+        "vertex_ai/claude-sonnet-5"
+      ]
+    }
+  ],
+  "pilot": {
+    "concurrency": 1,
+    "jobs": [
+      {"dataset": "main", "instance_id": "aggregating_compression/M/d2/w256/test/0000/t000"},
+      {"dataset": "main", "instance_id": "box_reflection/M/d2/w64/test/0000/t001"},
+      {"dataset": "main", "instance_id": "component_relabel/M/d2/w100/test/0000/t001"},
+      {"dataset": "main", "instance_id": "local_stencil/M/d4/w10/test/0000/t008"},
+      {"dataset": "main", "instance_id": "metric_paint/M/d3/w100/test/0000/t016"},
+      {"dataset": "rq2", "instance_id": "box_reflection/M/d2/w16/test/0000/t016"},
+      {"dataset": "main", "instance_id": "boundary_layer/M/d4/w60/test/0000/t032"},
+      {"dataset": "main", "instance_id": "obstructed_motion/M/d4/w30/test/0000/t064"},
+      {"dataset": "main", "instance_id": "occluded_mix/M/d2/w12/test/0000/t064"},
+      {"dataset": "rq2", "instance_id": "occluded_mix/M/d2/w30/test/0000/t064"}
+    ]
+  },
+  "routes": {
+    "gateway": {
+      "base_url_env": "NAIRR_GATEWAY_BASE_URL",
+      "api_key_env": "NAIRR_GATEWAY_KEY"
+    }
+  }
+}
