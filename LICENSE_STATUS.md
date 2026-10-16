@@ -14,5 +14,6 @@ states, or answer-bearing failure cases. Local research archives are outside
 this release. Third-party dependencies retain their own licenses.
 
 The full paper author list is retained separately in `preferred-citation` in
-[CITATION.cff](CITATION.cff). The paper link will be added after arXiv publication.
-The repository remains private until public launch is authorized.
+[CITATION.cff](CITATION.cff). The [paper](https://arxiv.org/abs/2610.22312)
+describes the benchmark and accompanying study. This repository is public.
+The code and dataset licenses above do not change the paper's own license.
