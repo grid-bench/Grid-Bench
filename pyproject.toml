@@ -12,6 +12,12 @@ license-files = ["LICENSE", "LICENSE-DATA"]
 requires-python = ">=3.11"
 dependencies = []
 
+[project.urls]
+Homepage = "https://grid-bench.github.io/"
+Repository = "https://github.com/grid-bench/Grid-Bench"
+Paper = "https://arxiv.org/abs/2610.22312"
+Dataset = "https://huggingface.co/datasets/xzx34/Grid-Bench"
+
 [project.optional-dependencies]
 dev = [
   "pyright>=1.1.390",

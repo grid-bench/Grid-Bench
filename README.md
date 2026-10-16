@@ -2,6 +2,8 @@
 
 **Can LLMs Predict How Discrete Worlds Change?**
 
+[Paper](https://arxiv.org/abs/2610.22312) · [Website](https://grid-bench.github.io/) · [Dataset](https://huggingface.co/datasets/xzx34/Grid-Bench)
+
 Grid-Bench evaluates spatial state prediction under explicit rules. Each
 instance supplies an initial grid and an ordered sequence of spatial operations
 as text. The model returns the complete final grid, and an executable simulator
@@ -107,7 +109,20 @@ Maintainer: Zixiang Xu ([xzx34](https://github.com/xzx34)).
 
 Explore the [project website](https://grid-bench.github.io/) and download the
 [Hugging Face dataset](https://huggingface.co/datasets/xzx34/Grid-Bench).
-The paper URL will be added after arXiv publication.
+Read the [paper on arXiv](https://arxiv.org/abs/2610.22312). To cite the benchmark:
+
+```bibtex
+@misc{xu2026gridbench,
+  title = {Grid-Bench: Can {LLMs} Predict How Discrete Worlds Change?},
+  author = {Xu, Zixiang and Song, Zirui and Zheng, Wanrong and Zhang, Chiyu and Huang, Yue and Peng, Yuyang and Zhang, Kexin and Chen, Jinkun and Chen, Xiuying and Zhang, Xiangliang and Liu, Yan and Itti, Laurent and Shyu, Frank and Luo, Xiaoqiang and Pandey, Sandeep and Liu, Xi and Simon, Luke and Hu, Xiyang and Zhao, Yue},
+  year = {2026},
+  eprint = {2610.22312},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.CL},
+  doi = {10.48550/arXiv.2610.22312},
+  url = {https://arxiv.org/abs/2610.22312}
+}
+```
 
 ## Development
 
